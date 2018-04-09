@@ -54,6 +54,7 @@ dependencies {
     runtime "org.springframework.boot:spring-boot-devtools:$spring_boot_version"
 
     compile 'org.apache.shiro:shiro-spring-boot-web-starter:1.4.0'
+    compileOnly 'org.projectlombok:lombok:1.16.20'
 
 //    testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile("org.springframework.boot:spring-boot-starter-test:$spring_boot_version")
