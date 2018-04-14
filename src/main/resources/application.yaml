@@ -18,7 +18,7 @@ spring:
 #      ddl-auto: create # none # validate # update # create-drop
 
   datasource:
-    url:      jdbc:mysql://localhost/hly?useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&serverTimezone=CST
+    url:      jdbc:mysql://localhost/hly2?useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&serverTimezone=CST
     username: hly
     password: hly
     driver-class-name: com.mysql.cj.jdbc.Driver

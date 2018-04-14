@@ -22,62 +22,62 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 class Application {
     val log: Logger = LoggerFactory.getLogger("Application")
 
-    @Bean
-    fun dbTest1(repository: MaterialRepository): CommandLineRunner {
-        return CommandLineRunner {
-            // save a couple of citys
-//            repository.save(Material(code = "c1234", name = "n322"))
-
-            // fetch all citys
-            log.info("findAll():")
-            log.info("-------------------------------")
-            for (city in repository.findAll()) {
-                log.info(city.toString())
-            }
-            log.info("")
-
-            // fetch an individual city by ID
-//            repository.findById(1L)
-//                    .ifPresent({ city ->
-//                        log.info("findById(1L):")
-//                        log.info("--------------------------------")
-//                        log.info(city.toString())
-//                        log.info("")
-//                    })
+//    @Bean
+//    fun dbTest1(repository: MaterialRepository): CommandLineRunner {
+//        return CommandLineRunner {
+//            // save a couple of citys
+////            repository.save(Material(code = "c1234", name = "n322"))
 //
-//            // fetch citys by last name
-//            log.info("findByCode():")
-//            log.info("--------------------------------------------")
-//            repository.findByCode("Gelderland").forEach { city -> log.info(city.toString()) }
-            // for (City bauer : repository.findByLastName("Bauer")) {
-            // 	log.info(bauer.toString());
-            // }
-            log.info("")
-        }
-    }
+//            // fetch all citys
+//            log.info("findAll():")
+//            log.info("-------------------------------")
+//            for (city in repository.findAll()) {
+//                log.info(city.toString())
+//            }
+//            log.info("")
+//
+//            // fetch an individual city by ID
+////            repository.findById(1L)
+////                    .ifPresent({ city ->
+////                        log.info("findById(1L):")
+////                        log.info("--------------------------------")
+////                        log.info(city.toString())
+////                        log.info("")
+////                    })
+////
+////            // fetch citys by last name
+////            log.info("findByCode():")
+////            log.info("--------------------------------------------")
+////            repository.findByCode("Gelderland").forEach { city -> log.info(city.toString()) }
+//            // for (City bauer : repository.findByLastName("Bauer")) {
+//            // 	log.info(bauer.toString());
+//            // }
+//            log.info("")
+//        }
+//    }
 
-    @Bean
-    fun dbTest2(repository: ClientRepository): CommandLineRunner {
-        return CommandLineRunner {
-            //            repository.save(Client(name = "c123"))
-//            val client = Client(name = "c12")
-//            repository.save(client)
-//            client.orders = arrayListOf(
-//                    Order(no = "o123", orderDate = Date(), deliveryDate = Date(), quantity = 2.3f),
-//                    Order(no = "o1234", orderDate = Date(), deliveryDate = Date(), quantity = 4.3f)
-//            )
-//            repository.save(client)
-
-            // fetch all citys
-            log.info("findAll():")
-            log.info("-------------------------------")
-            for (city in repository.findAll()) {
-//                Hibernate.initialize(city.orders)
-                log.info(city.toString())
-            }
-            log.info("")
-        }
-    }
+//    @Bean
+//    fun dbTest2(repository: ClientRepository): CommandLineRunner {
+//        return CommandLineRunner {
+//            //            repository.save(Client(name = "c123"))
+////            val client = Client(name = "c12")
+////            repository.save(client)
+////            client.orders = arrayListOf(
+////                    Order(no = "o123", orderDate = Date(), deliveryDate = Date(), quantity = 2.3f),
+////                    Order(no = "o1234", orderDate = Date(), deliveryDate = Date(), quantity = 4.3f)
+////            )
+////            repository.save(client)
+//
+//            // fetch all citys
+//            log.info("findAll():")
+//            log.info("-------------------------------")
+//            for (city in repository.findAll()) {
+////                Hibernate.initialize(city.orders)
+//                log.info(city.toString())
+//            }
+//            log.info("")
+//        }
+//    }
 
 //    @Bean
 //    fun aopChecker(greetingController: GreetingController) : CommandLineRunner {
