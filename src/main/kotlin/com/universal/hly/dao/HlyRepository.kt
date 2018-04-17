@@ -3,6 +3,7 @@ package com.universal.hly.dao
 import com.universal.hly.model.*
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.repository.NoRepositoryBean
+import org.springframework.data.rest.core.annotation.RepositoryRestResource
 import java.io.Serializable
 import java.util.*
 import javax.persistence.EntityManager
@@ -46,7 +47,7 @@ open class ClientRepositoryImpl : ClientRepositoryCustom {
     }
 }
 
-//@RepositoryRestResource(collectionResourceRel = "/api/data/client", path = "/api/data/client")
+@RepositoryRestResource(excerptProjection = InlineClientType::class)
 interface ClientRepository : MyBaseRepository<Client, Long>, ClientRepositoryCustom {
     fun findByName(name: String): List<Client>
 }
@@ -74,6 +75,7 @@ interface FormulaItemRepository : MyBaseRepository<FormulaItem, Long> {
 //    fun findByProduct(id: Long): List<FormulaItem>
 }
 
+@RepositoryRestResource(excerptProjection = InlineMaterialType::class)
 interface MaterialRepository : MyBaseRepository<Material, Long> {
     fun findByCode(code: String): Optional<Material>
     fun findByName(name: String): Optional<Material>

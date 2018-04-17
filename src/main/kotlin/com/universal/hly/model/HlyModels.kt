@@ -1,5 +1,6 @@
 package com.universal.hly.model
 
+import org.springframework.data.rest.core.config.Projection
 import java.io.Serializable
 import java.util.*
 import javax.persistence.*
@@ -38,7 +39,7 @@ data class Client(
         @Column(length = 100)
         val fullName: String? = null,
 
-        @ManyToOne
+        @ManyToOne(fetch = FetchType.EAGER)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_client_type"))
         val type: ClientType? = null,
 
@@ -78,6 +79,23 @@ data class Client(
     override fun toString(): String {
         return "Client(id=$id, name='$name', fullName=$fullName, type=$type, contractNo='$contractNo', settlementPolicy=$settlementPolicy, address=$address, deliveryAddress=$deliveryAddress, postCode=$postCode, contact=$contact, phone=$phone, comment=$comment, metadata=$metadata)"
     }
+}
+
+@Projection(types = [Client::class])
+interface InlineClientType {
+    fun getId(): Long
+    fun getName(): String
+    fun getFullName(): String
+    fun getType(): ClientType
+    fun getContractNo(): String
+    fun getSettlementPolicy(): String
+    fun getAddress(): String
+    fun getDeliveryAddress(): String
+    fun getPostCode(): String
+    fun getContact(): String
+    fun getPhone(): String
+    fun getComment(): String
+    fun getMetadata(): String
 }
 
 
@@ -317,6 +335,9 @@ data class FormulaItemKey(
         val material: Long
 ) : Serializable
 
+interface InlineMaterial {
+
+}
 
 @Entity
 data class Material(
@@ -330,7 +351,7 @@ data class Material(
         @Column(nullable = false, length = 50)
         val name: String = "",
 
-        @ManyToOne
+        @ManyToOne//(fetch = FetchType.EAGER)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_material_type"))
         val type: MaterialType? = null,
 
@@ -344,6 +365,17 @@ data class Material(
         @Column(length = 500)
         val metadata: String? = null
 )
+
+@Projection(name = "InlineMaterialType", types = [Material::class])
+interface InlineMaterialType {
+    fun getId(): Long
+    fun getCode(): String
+    fun getName(): String
+    fun getType(): MaterialType
+    fun getSafeQuantity(): Float
+    fun getComment(): String
+    fun getMetadata(): String
+}
 
 
 @Entity
