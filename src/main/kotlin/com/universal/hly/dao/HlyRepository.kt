@@ -80,7 +80,8 @@ interface FormulaRepository : MyBaseRepository<Formula, Long> {
 }
 
 interface FormulaItemRepository : MyBaseRepository<FormulaItem, Long> {
-//    fun findByProduct(id: Long): List<FormulaItem>
+    @Query("select * from formula_item where formula_id = ?1", nativeQuery = true)
+    fun findByFormula(@Param("id") id: Long): List<FormulaItem>
 }
 
 @RepositoryRestResource(excerptProjection = InlineMaterialType::class)

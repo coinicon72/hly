@@ -1,5 +1,6 @@
 package com.universal.hly.model
 
+import org.hibernate.annotations.NaturalId
 import org.springframework.data.rest.core.config.Projection
 import java.io.Serializable
 import java.util.*
@@ -43,6 +44,7 @@ data class Client(
         @JoinColumn(foreignKey = ForeignKey(name = "fk_client_type"))
         val type: ClientType? = null,
 
+        @NaturalId
         @Column(unique = true, nullable = false, length = 50)
         val contractNo: String = "",
 
@@ -183,6 +185,7 @@ data class Product(
         @GeneratedValue
         val id: Long? = null,
 
+        @NaturalId
         @Column(unique = true, nullable = false, length = 20)
         val code: String = "",
 
@@ -212,44 +215,6 @@ data class Product(
 )
 
 
-@Entity
-data class ProduceCondition(
-        @Id
-        val id: Long? = null,
-
-        @MapsId
-        @OneToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
-//        val product: Product? = null,
-        val formula: Formula? = null,
-
-        @Column(nullable = false)
-        val mixTime: Int = -1,
-
-        @Column(nullable = false)
-        val inputTemperature: Int = -1,
-
-        @Column(nullable = false)
-        val outputTemperature: Int = -1,
-
-        @Column(nullable = false)
-        val mesh: Int = -1,
-
-        @Column(nullable = false)
-        val mainMillerRpm: Int = -1,
-
-        @Column(nullable = false)
-        val secondMillerRpm: Int = -1,
-
-        @Column(nullable = false)
-        val screwRpm: Int = -1
-) {
-    override fun toString(): String {
-        return "ProduceCondition(formula=$formula, mixTime=$mixTime, inputTemperature=$inputTemperature, outputTemperature=$outputTemperature, mesh=$mesh, mainMillerRpm=$mainMillerRpm, secondMillerRpm=$secondMillerRpm, screwRpm=$screwRpm)"
-    }
-}
-
-
 //@Entity
 //data class Formula(
 //        @Id
@@ -274,27 +239,27 @@ data class Formula(
 
 //        @Id
 //        @GeneratedValue(strategy = GenerationType.SEQUENCE)
-        val revision: Int,
+        val revision: Int = 0,
 
 //        @MapsId
-        @ManyToOne
+        @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_rev_product"))
 //        @Column(insertable = false, updatable = false)
-        val product: Product,
+        val product: Product? = null,
 //        val formula: Formula,
 
         @Column(nullable = false)
-        val createDate: Date,
+        val createDate: Date = Date(),
 
         @Column(length = 200)
-        val changeLog: String,
+        val changeLog: String? = null,
 
         val comment: String? = null,
 
         @Column(length = 500)
         val metadata: String? = null,
 
-        @OneToOne(cascade = [CascadeType.ALL], orphanRemoval = true)
+        @OneToOne//(cascade = [CascadeType.ALL], orphanRemoval = true)
 //        @JoinColumn(name = "produce_condition", foreignKey = ForeignKey(name = "fk_product_produce_cond"))
         @PrimaryKeyJoinColumn
         var produceCondition: ProduceCondition? = null,
@@ -313,26 +278,81 @@ data class Formula(
 
 
 @Entity
-@IdClass(FormulaItemKey::class)
-data class FormulaItem(
+data class ProduceCondition(
         @Id
-        @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_formula"))
+        val id: Long? = null,
+
+        @MapsId
+        @OneToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE], fetch = FetchType.LAZY)
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
+        val formula: Formula? = null,
+
+        @Column(nullable = false)
+        val mixTime: Int = -1,
+
+        @Column(nullable = false)
+        val inputTemperature: Int = -1,
+
+        @Column(nullable = false)
+        val outputTemperature: Int = -1,
+
+        @Column(nullable = false)
+        val mesh: Int = -1,
+
+        @Column(nullable = false)
+        val mainMillerRpm: Int = -1,
+
+        @Column(nullable = false)
+        val secondMillerRpm: Int = -1,
+
+        @Column(nullable = false)
+        val screwRpm: Int = -1
+) {
+    override fun toString(): String {
+        return "ProduceCondition(mixTime=$mixTime, inputTemperature=$inputTemperature, outputTemperature=$outputTemperature, mesh=$mesh, mainMillerRpm=$mainMillerRpm, secondMillerRpm=$secondMillerRpm, screwRpm=$screwRpm)"
+    }
+}
+
+
+// =================================================================================================
+// id and formula/material obj are all need
+//
+// following to add new row, id has no used, fk identified by {"formula": {"id": 2}, "material": {"id": 2}}
+// {"quantity": 8, "id": {"formula": ?, "material": ?}, "formula": {"id": 2}, "material": {"id": 2}}
+//
+// following to update row, id used to identify row, {"formula": {"id": 2}, "material": {"id": 2}} will not used
+// {"quantity": 8, "id": {"formula": 2, "material": 2}, "formula": {"id": ?}, "material": {"id": ?}}
+
+@Entity
+//@IdClass(FormulaItemKey::class)
+data class FormulaItem(
+        @EmbeddedId
+        val id: FormulaItemKey,
+
+//        @Id
+        @MapsId("formula")
+        @ManyToOne//(cascade = [CascadeType.MERGE], fetch = FetchType.LAZY)
+        @JoinColumn( foreignKey = ForeignKey(name = "fk_formula_item_formula"))
 //        @JoinColumns(value = [JoinColumn(name = "product_id", referencedColumnName = "product_id"),
 //            JoinColumn(name = "formula_revision", referencedColumnName = "revision")])
         val formula: Formula,
 
-        @Id
-        @ManyToOne
+//        @Id
+        @MapsId("material")
+        @ManyToOne//(cascade = [CascadeType.MERGE], fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_material"))
         val material: Material,
 
         val quantity: Float
 ) : Serializable
 
+@Embeddable
 data class FormulaItemKey(
-        val formula: Long,
-        val material: Long
+        @Column//(name = "formula_id")//, insertable = false, updatable = false)
+        val formula: Long = 0,
+
+        @Column//(name = "material_id")//, insertable = false, updatable = false)
+        val material: Long = 0
 ) : Serializable
 
 interface InlineMaterial {
@@ -345,7 +365,8 @@ data class Material(
         @GeneratedValue
         val id: Long? = null,
 
-        @Column(unique = true, nullable = false, length = 20)
+        @NaturalId
+        @Column(length = 20)//, unique = true, nullable = false)
         val code: String = "",
 
         @Column(nullable = false, length = 50)
@@ -364,7 +385,7 @@ data class Material(
 
         @Column(length = 500)
         val metadata: String? = null
-)
+) : Serializable
 
 @Projection(name = "InlineMaterialType", types = [Material::class])
 interface InlineMaterialType {
