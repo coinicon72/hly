@@ -335,16 +335,16 @@ data class FormulaItem(
         val id: FormulaItemKey,
 
         @MapsId("formula")
-        @ManyToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-        @JoinColumn( foreignKey = ForeignKey(name = "fk_formula_item_formula"))
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_formula"))
 //        @JoinColumns(value = [JoinColumn(name = "product_id", referencedColumnName = "product_id"),
 //            JoinColumn(name = "formula_revision", referencedColumnName = "revision")])
-        val formula: Formula,
+        val formula: Formula? = null,
 
         @MapsId("material")
-        @ManyToOne//(cascade = [CascadeType.MERGE], fetch = FetchType.LAZY)
+        @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_material"))
-        val material: Material,
+        val material: Material? = null,
 
         val quantity: Float
 ) : Serializable
