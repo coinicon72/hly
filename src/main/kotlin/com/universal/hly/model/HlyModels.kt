@@ -1,6 +1,8 @@
 package com.universal.hly.model
 
 import org.hibernate.annotations.NaturalId
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 import org.springframework.data.rest.core.config.Projection
 import java.io.Serializable
 import java.util.*
@@ -259,12 +261,14 @@ data class Formula(
         @Column(length = 500)
         val metadata: String? = null,
 
-        @OneToOne//(cascade = [CascadeType.ALL], orphanRemoval = true)
+        @OneToOne(cascade = [CascadeType.REMOVE])//, orphanRemoval = true)
 //        @JoinColumn(name = "produce_condition", foreignKey = ForeignKey(name = "fk_product_produce_cond"))
         @PrimaryKeyJoinColumn
+        @OnDelete(action = OnDeleteAction.CASCADE)
         var produceCondition: ProduceCondition? = null,
 
-        @OneToMany(mappedBy = "formula")
+        @OneToMany(mappedBy = "formula", cascade= [CascadeType.REMOVE])
+        @OnDelete(action = OnDeleteAction.CASCADE)
         val items: List<FormulaItem> = LinkedList()
 )
 
@@ -283,7 +287,7 @@ data class ProduceCondition(
         val id: Long? = null,
 
         @MapsId
-        @OneToOne(cascade = [CascadeType.PERSIST, CascadeType.MERGE], fetch = FetchType.LAZY)
+        @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
         val formula: Formula? = null,
 
@@ -331,7 +335,7 @@ data class FormulaItem(
         val id: FormulaItemKey,
 
         @MapsId("formula")
-        @ManyToOne//(cascade = [CascadeType.MERGE], fetch = FetchType.LAZY)
+        @ManyToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
         @JoinColumn( foreignKey = ForeignKey(name = "fk_formula_item_formula"))
 //        @JoinColumns(value = [JoinColumn(name = "product_id", referencedColumnName = "product_id"),
 //            JoinColumn(name = "formula_revision", referencedColumnName = "revision")])
