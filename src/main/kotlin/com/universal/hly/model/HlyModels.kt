@@ -315,6 +315,8 @@ data class ProduceCondition(
 
 
 // =================================================================================================
+// the @IdClass approach will lead to "detached entity passed to persist" error, don't know why
+
 // id and formula/material obj are all need
 //
 // following to add new row, id has no used, fk identified by {"formula": {"id": 2}, "material": {"id": 2}}
@@ -324,12 +326,10 @@ data class ProduceCondition(
 // {"quantity": 8, "id": {"formula": 2, "material": 2}, "formula": {"id": ?}, "material": {"id": ?}}
 
 @Entity
-//@IdClass(FormulaItemKey::class)
 data class FormulaItem(
         @EmbeddedId
         val id: FormulaItemKey,
 
-//        @Id
         @MapsId("formula")
         @ManyToOne//(cascade = [CascadeType.MERGE], fetch = FetchType.LAZY)
         @JoinColumn( foreignKey = ForeignKey(name = "fk_formula_item_formula"))
@@ -337,7 +337,6 @@ data class FormulaItem(
 //            JoinColumn(name = "formula_revision", referencedColumnName = "revision")])
         val formula: Formula,
 
-//        @Id
         @MapsId("material")
         @ManyToOne//(cascade = [CascadeType.MERGE], fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_material"))
@@ -354,6 +353,34 @@ data class FormulaItemKey(
         @Column//(name = "material_id")//, insertable = false, updatable = false)
         val material: Long = 0
 ) : Serializable
+
+
+// the @IdClass approach
+//
+//@Entity
+//@IdClass(FormulaItemKey::class)
+//data class FormulaItem(
+//        @Id
+//        @ManyToOne//(cascade = [CascadeType.MERGE], fetch = FetchType.LAZY)
+//        @JoinColumn( foreignKey = ForeignKey(name = "fk_formula_item_formula"))
+//        val formula: Formula,
+//
+//        @Id
+//        @ManyToOne//(cascade = [CascadeType.MERGE], fetch = FetchType.LAZY)
+//        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_material"))
+//        val material: Material,
+//
+//        val quantity: Float
+//) : Serializable
+//
+//data class FormulaItemKey(
+//        val formula: Long = 0,
+//
+//        val material: Long = 0
+//) : Serializable
+
+
+
 
 interface InlineMaterial {
 

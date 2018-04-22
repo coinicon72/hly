@@ -75,7 +75,7 @@ interface ProduceConditionRepository : MyBaseRepository<ProduceCondition, Long> 
 interface FormulaRepository : MyBaseRepository<Formula, Long> {
     fun findByProduct(id: Long): List<Formula>
 
-    @Query("select ifnull(max(revision), 0) from formula where id = ?1", nativeQuery = true)
+    @Query("select ifnull(max(revision), 0) from formula where product_id = ?1", nativeQuery = true)
     fun getLatestRevision(@Param("id") id: Long): Int
 }
 
