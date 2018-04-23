@@ -73,7 +73,7 @@ data class Client(
         @Column(length = 500)
         val metadata: String? = null,
 
-        @OneToMany(mappedBy = "client", cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
+        @OneToMany(mappedBy = "client")//, cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
         val orders: MutableList<Order> = mutableListOf()
 ) {
 //    fun addOrder(order: Order) {
@@ -141,31 +141,36 @@ data class Order(
         val comment: String? = null,
 
         @Column(length = 500)
-        val metadata: String? = null
+        val metadata: String? = null,
+
+        // 订单状态, 0 = 签订, 1 = 执行中, 2 = 已完成, 3 = 取消
+        @Column(nullable = false)
+        val status: Int = 0
 ) {
     override fun toString(): String {
-        return "Order(id=$id, no='$no', client=$client, orderDate=$orderDate, deliveryDate=$deliveryDate, tax=$tax, value=$value, actualValue=$actualValue)"
+        return "Order(id=$id, no='$no', orderDate=$orderDate, deliveryDate=$deliveryDate, tax=$tax, value=$value, actualValue=$actualValue, comment=$comment, metadata=$metadata, status=$status)"
     }
 }
 
 
 @Entity
-@IdClass(OrderItemKey::class)
+//@IdClass(OrderItemKey::class)
 data class OrderItem(
-        @Id
+        @EmbeddedId
 //        @GeneratedValue//(strategy = GenerationType.IDENTITY)
 //        val id: Long? = null,
+        val id: OrderItemKey,
 
-        @MapsId
+        @MapsId("order")
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_order_item_order"))
-        val order: Order? = null,
+        val order: Order,
 
-        @Id
-        @MapsId
+//        @Id
+        @MapsId("product")
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_order_item_product"))
-        val product: Product? = null,
+        val product: Product,
 
         @Column(nullable = false)
         val quantity: Float = 0f,
@@ -175,6 +180,7 @@ data class OrderItem(
 ) : Serializable
 
 
+@Embeddable
 data class OrderItemKey(
         val order: Long,
         val product: Long
@@ -212,7 +218,7 @@ data class Product(
 ////        val formula: Formula
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_product_formula"))
 //        val formula: Formula
-        @OneToMany(mappedBy = "product", cascade = [CascadeType.ALL], orphanRemoval = true)
+        @OneToMany(mappedBy = "product", cascade = [CascadeType.REMOVE], orphanRemoval = true)
         val formulas: List<Formula> = LinkedList()
 )
 
@@ -287,7 +293,7 @@ data class ProduceCondition(
         val id: Long? = null,
 
         @MapsId
-        @OneToOne(cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+        @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
         val formula: Formula? = null,
 
@@ -336,25 +342,25 @@ data class FormulaItem(
 
         @MapsId("formula")
         @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_formula"))
+        @JoinColumn( foreignKey = ForeignKey(name = "fk_formula_item_formula"))
 //        @JoinColumns(value = [JoinColumn(name = "product_id", referencedColumnName = "product_id"),
 //            JoinColumn(name = "formula_revision", referencedColumnName = "revision")])
-        val formula: Formula? = null,
+        val formula: Formula,
 
         @MapsId("material")
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_material"))
-        val material: Material? = null,
+        val material: Material,
 
         val quantity: Float
 ) : Serializable
 
 @Embeddable
 data class FormulaItemKey(
-        @Column//(name = "formula_id")//, insertable = false, updatable = false)
+//        @Column//(name = "formula_id")//, insertable = false, updatable = false)
         val formula: Long = 0,
 
-        @Column//(name = "material_id")//, insertable = false, updatable = false)
+//        @Column//(name = "material_id")//, insertable = false, updatable = false)
         val material: Long = 0
 ) : Serializable
 
