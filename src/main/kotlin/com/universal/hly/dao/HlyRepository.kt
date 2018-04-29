@@ -54,26 +54,27 @@ open class ClientRepositoryImpl : ClientRepositoryCustom {
 
 @RepositoryRestResource(excerptProjection = InlineClientType::class)
 interface ClientRepository : MyBaseRepository<Client, Long>, ClientRepositoryCustom {
-    fun findByName(name: String): List<Client>
+    fun findByName(@Param("name") name: String): List<Client>
 }
 
 interface OrderRepository : MyBaseRepository<Order, Long> {
-    fun findByNo(no: String): Optional<Order>
+    fun findByNo(@Param("no") no: String): Optional<Order>
+    fun findByStatusEquals(@Param("status") status: Int): List<Order>
 }
 
-interface OrderItemRepository : MyBaseRepository<OrderItem, Long> {
+interface OrderItemRepository : MyBaseRepository<OrderItem, OrderItemKey> {
 }
 
 interface ProductRepository : MyBaseRepository<Product, Long> {
-    fun findByCode(code: String): Optional<Product>
+    fun findByCode(@Param("code") code: String): Optional<Product>
 }
 
 interface ProduceConditionRepository : MyBaseRepository<ProduceCondition, Long> {
-    fun findByFormula(id: Long): Optional<ProduceCondition>
+    fun findByFormula(@Param("id") id: Long): Optional<ProduceCondition>
 }
 
 interface FormulaRepository : MyBaseRepository<Formula, Long> {
-    fun findByProduct(id: Long): List<Formula>
+    fun findByProduct(@Param("id") id: Long): List<Formula>
 
     @Query("select ifnull(max(revision), 0) from formula where product_id = ?1", nativeQuery = true)
     fun getLatestRevision(@Param("id") id: Long): Int
@@ -86,10 +87,17 @@ interface FormulaItemRepository : MyBaseRepository<FormulaItem, Long> {
 
 @RepositoryRestResource(excerptProjection = InlineMaterialType::class)
 interface MaterialRepository : MyBaseRepository<Material, Long> {
-    fun findByCode(code: String): Optional<Material>
-    fun findByName(name: String): Optional<Material>
+    fun findByCode(@Param("code") code: String): Optional<Material>
+    fun findByName(@Param("name") name: String): Optional<Material>
 }
 
 interface MaterialTypeRepository : MyBaseRepository<MaterialType, Long> {
 }
 
+
+interface BomRepository : MyBaseRepository<Bom, Long> {
+}
+
+
+interface BomItemRepository : MyBaseRepository<BomItem, BomItemKey> {
+}

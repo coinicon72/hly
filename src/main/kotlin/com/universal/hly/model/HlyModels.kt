@@ -135,8 +135,8 @@ data class Order(
 
         val tax: Boolean = false,
 
-        val value: Float,
-        val actualValue: Float,
+        val value: Float = 0f,
+        val actualValue: Float?,
 
         val comment: String? = null,
 
@@ -144,7 +144,7 @@ data class Order(
         val metadata: String? = null,
 
         // 订单状态, 0 = 签订, 1 = 执行中, 2 = 已完成, 3 = 取消
-        @Column(nullable = false)
+        @Column(nullable = false, columnDefinition = "tinyint default 0")
         val status: Int = 0
 ) {
     override fun toString(): String {
@@ -453,11 +453,17 @@ data class Bom(
 
 //       @Id
         @OneToOne
-        val orderItem: OrderItem? = null,
+        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id",
+                foreignKey = ForeignKey(name = "fk_bom_order_id")),
+                JoinColumn(name = "product_id", referencedColumnName = "product_id"),
+                foreignKey = ForeignKey(name = "fk_bom_product_id"))
+        val orderItem: OrderItem,
 
         @ManyToOne
-        val formula: Formula? = null,
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_formula_id"))
+        val formula: Formula,
 
+        @Column(nullable = false, columnDefinition = "datetime default now()")
         val createDate: Date = Date(),
 
         @OneToMany(mappedBy = "bom")
@@ -472,11 +478,13 @@ data class BomItem(
 
         @MapsId("bom")
         @ManyToOne
-        val bom: Long = 0,
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_item_bom"))
+        val bom: Bom,
 
         @MapsId("material")
         @ManyToOne
-        val material: Material? = null,
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_material"))
+        val material: Material,
 
         val calcQuantity: Float = 0f,
         val quantity: Float = 0f
@@ -488,43 +496,3 @@ data class BomItemKey(
         val bom: Long = 0,
         val material: Long = 0
 ) : Serializable
-
-//data class RecipyItemKey (
-//        val material: Material,
-//        val quantity: Float
-//) : Serializable
-//
-//
-//@Embeddable
-//data class Recipe(
-////        @Id
-////        @GeneratedValue(strategy = GenerationType.IDENTITY)
-////        val id: Long,
-//
-//        @NotBlank
-//        val code: String,
-//
-//        @NotBlank
-//        val name: String,
-//
-//        val comment: String,
-//
-//        val reversion: RecipeReversion
-//)
-
-
-//@Entity
-//data class ProductTest(
-//        val product: Product,
-//
-//        val mixTime: Int,
-//
-//        val inputTemperature: Int,
-//        val outputTemperature: Int,
-//
-//        val mesh: Int,
-//
-//        val mainMillerRpm: Int,
-//        val secondMillerRpm: Int,
-//        val screwRpm: Int
-//)
