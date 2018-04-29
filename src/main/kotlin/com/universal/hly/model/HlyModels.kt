@@ -273,7 +273,7 @@ data class Formula(
         @OnDelete(action = OnDeleteAction.CASCADE)
         var produceCondition: ProduceCondition? = null,
 
-        @OneToMany(mappedBy = "formula", cascade= [CascadeType.REMOVE])
+        @OneToMany(mappedBy = "formula", cascade = [CascadeType.REMOVE])
         @OnDelete(action = OnDeleteAction.CASCADE)
         val items: List<FormulaItem> = LinkedList()
 )
@@ -342,7 +342,7 @@ data class FormulaItem(
 
         @MapsId("formula")
         @ManyToOne(fetch = FetchType.LAZY)
-        @JoinColumn( foreignKey = ForeignKey(name = "fk_formula_item_formula"))
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_formula"))
 //        @JoinColumns(value = [JoinColumn(name = "product_id", referencedColumnName = "product_id"),
 //            JoinColumn(name = "formula_revision", referencedColumnName = "revision")])
         val formula: Formula,
@@ -388,8 +388,6 @@ data class FormulaItemKey(
 //
 //        val material: Long = 0
 //) : Serializable
-
-
 
 
 interface InlineMaterial {
@@ -445,6 +443,51 @@ data class MaterialType(
         @Column(nullable = false, length = 50)
         val name: String = ""
 )
+
+
+@Entity
+data class Bom(
+        @Id
+        @GeneratedValue
+        val id: Long = 0,
+
+//       @Id
+        @OneToOne
+        val orderItem: OrderItem? = null,
+
+        @ManyToOne
+        val formula: Formula? = null,
+
+        val createDate: Date = Date(),
+
+        @OneToMany(mappedBy = "bom")
+        val items: List<BomItem> = LinkedList()
+)
+
+
+@Entity
+data class BomItem(
+        @EmbeddedId
+        val id: BomItemKey,
+
+        @MapsId("bom")
+        @ManyToOne
+        val bom: Long = 0,
+
+        @MapsId("material")
+        @ManyToOne
+        val material: Material? = null,
+
+        val calcQuantity: Float = 0f,
+        val quantity: Float = 0f
+) : Serializable
+
+
+@Embeddable
+data class BomItemKey(
+        val bom: Long = 0,
+        val material: Long = 0
+) : Serializable
 
 //data class RecipyItemKey (
 //        val material: Material,
