@@ -176,7 +176,10 @@ data class OrderItem(
         val quantity: Float = 0f,
         val actualQuantity: Float? = null,
 
-        val price: Float = 0f
+        val price: Float = 0f,
+
+        @OneToOne(mappedBy = "orderItem")
+        val bom: Bom? = null
 ) : Serializable
 
 
@@ -457,11 +460,11 @@ data class Bom(
                 foreignKey = ForeignKey(name = "fk_bom_order_id")),
                 JoinColumn(name = "product_id", referencedColumnName = "product_id"),
                 foreignKey = ForeignKey(name = "fk_bom_product_id"))
-        val orderItem: OrderItem,
+        val orderItem: OrderItem? = null,
 
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_formula_id"))
-        val formula: Formula,
+        val formula: Formula? = null,
 
         @Column(nullable = false, columnDefinition = "datetime default now()")
         val createDate: Date = Date(),
