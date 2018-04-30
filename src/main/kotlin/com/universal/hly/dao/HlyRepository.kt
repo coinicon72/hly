@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.query.Param
 import org.springframework.data.rest.core.annotation.RepositoryRestResource
+import org.springframework.data.rest.webmvc.spi.BackendIdConverter
+import org.springframework.stereotype.Component
 import java.io.Serializable
 import java.util.*
 import javax.persistence.EntityManager
@@ -104,4 +106,60 @@ interface BomRepository : MyBaseRepository<Bom, Long> {
 
 
 interface BomItemRepository : MyBaseRepository<BomItem, BomItemKey> {
+}
+
+
+// ==============================================================
+@Component
+class FormulaItemKeyConverter : BackendIdConverter {
+
+    override fun fromRequestId(id: String, entityType: Class<*> ) : Serializable {
+        val parts = id.split("_")
+        return FormulaItemKey(parts[0].toLong(), parts[1].toLong())
+    }
+
+    override fun toRequestId(source : Serializable, entityType: Class<*>) : String  {
+        val id: FormulaItemKey  = source as FormulaItemKey
+        return String.format("%s_%s", id.formula, id.material)
+    }
+
+    override fun supports(type: Class<*> ): Boolean  {
+        return FormulaItem::class.java == type
+    }
+}
+
+@Component
+class OrderItemKeyConverter : BackendIdConverter {
+
+    override fun fromRequestId(id: String, entityType: Class<*> ) : Serializable {
+        val parts = id.split("_")
+        return OrderItemKey(parts[0].toLong(), parts[1].toLong())
+    }
+
+    override fun toRequestId(source : Serializable, entityType: Class<*>) : String  {
+        val id: OrderItemKey  = source as OrderItemKey
+        return String.format("%s_%s", id.order, id.product)
+    }
+
+    override fun supports(type: Class<*> ): Boolean  {
+        return OrderItem::class.java == type
+    }
+}
+
+@Component
+class BomItemKeyConverter : BackendIdConverter {
+
+    override fun fromRequestId(id: String, entityType: Class<*> ) : Serializable {
+        val parts = id.split("_")
+        return BomItemKey(parts[0].toLong(), parts[1].toLong())
+    }
+
+    override fun toRequestId(source : Serializable, entityType: Class<*>) : String  {
+        val id: BomItemKey  = source as BomItemKey
+        return String.format("%s_%s", id.bom, id.material)
+    }
+
+    override fun supports(type: Class<*> ): Boolean  {
+        return BomItem::class.java == type
+    }
 }
