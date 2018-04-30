@@ -62,6 +62,7 @@ interface OrderRepository : MyBaseRepository<Order, Long> {
     fun findByStatusEquals(@Param("status") status: Int): List<Order>
 }
 
+@RepositoryRestResource(excerptProjection = InlineOrderAndProductType::class)
 interface OrderItemRepository : MyBaseRepository<OrderItem, OrderItemKey> {
 }
 
@@ -95,6 +96,7 @@ interface MaterialTypeRepository : MyBaseRepository<MaterialType, Long> {
 }
 
 
+@RepositoryRestResource(excerptProjection = InlineOrderItemAndFormulaType::class)
 interface BomRepository : MyBaseRepository<Bom, Long> {
     @Query("select * from bom b join order_item oi on b.order_id = oi.order_id and b.product_id = oi.product_id where oi.order_id = ?1", nativeQuery = true)
     fun findByOrderId(@Param("oid") oid: Long): List<Bom>

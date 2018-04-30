@@ -168,12 +168,13 @@ data class OrderItem(
 
 //        @Id
         @MapsId("product")
-        @ManyToOne
+        @ManyToOne(fetch = FetchType.EAGER)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_order_item_product"))
         val product: Product,
 
         @Column(nullable = false)
         val quantity: Float = 0f,
+
         val actualQuantity: Float? = null,
 
         val price: Float = 0f,
@@ -181,6 +182,17 @@ data class OrderItem(
         @OneToOne(mappedBy = "orderItem")
         val bom: Bom? = null
 ) : Serializable
+
+
+@Projection(name = "InlineOrderAndProductType", types = [OrderItem::class])
+interface InlineOrderAndProductType {
+    fun getId(): OrderItemKey
+    fun getQuantity(): Float
+    fun getActualQuantity(): Float?
+    fun getPrice(): Float
+    fun getOrder(): Order
+    fun getProduct(): Product
+}
 
 
 @Embeddable
@@ -455,7 +467,7 @@ data class Bom(
         val id: Long = 0,
 
 //       @Id
-        @OneToOne
+        @OneToOne(fetch = FetchType.EAGER)
         @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id",
                 foreignKey = ForeignKey(name = "fk_bom_order_id")),
                 JoinColumn(name = "product_id", referencedColumnName = "product_id"),
@@ -472,6 +484,15 @@ data class Bom(
         @OneToMany(mappedBy = "bom")
         val items: List<BomItem> = LinkedList()
 )
+
+
+@Projection(name = "InlineOrderItemAndFormulaType", types = [Bom::class])
+interface InlineOrderItemAndFormulaType {
+    fun getId(): Long
+    fun getCreateDate(): Date
+    fun getFormula(): Formula
+    fun getOrderItem(): OrderItem
+}
 
 
 @Entity
