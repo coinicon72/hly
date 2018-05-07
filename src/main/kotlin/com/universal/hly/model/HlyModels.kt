@@ -104,20 +104,20 @@ interface InlineClientType {
 
 
 @Entity
-@Table(name = "[order]")
-//,
-//        uniqueConstraints = [(UniqueConstraint(name = "uniq_order_no", columnNames = ["no"]))])
+@Table(name = "[order]",
+        uniqueConstraints = [(UniqueConstraint(name = "uk_order_no", columnNames = ["no"]))])
 data class Order(
         @Id
         @GeneratedValue//(strategy = GenerationType.IDENTITY)
         val id: Long? = null,
 
+//        @NaturalId
         @Column(unique = true, nullable = false, length = 20)
         val no: String = "",
 
-        @ManyToOne
+        @ManyToOne//(fetch = FetchType.EAGER)
 //        @JoinColumn(name = "client", foreignKey = ForeignKey(name = "fk_client_order"))
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_client_order"))
+        @JoinColumn(nullable = false, foreignKey = ForeignKey(name = "fk_client_order"))
         val client: Client? = null,
 
         @Column(nullable = false)
@@ -203,13 +203,14 @@ data class OrderItemKey(
 
 
 @Entity
+@Table(uniqueConstraints = [(UniqueConstraint(name = "uk_product_code", columnNames = ["code"]))])
 data class Product(
         @Id
         @GeneratedValue
         val id: Long? = null,
 
-        @NaturalId
-        @Column(unique = true, nullable = false, length = 20)
+//        @NaturalId
+        @Column(nullable = false, length = 20)
         val code: String = "",
 
         @Column(length = 20)

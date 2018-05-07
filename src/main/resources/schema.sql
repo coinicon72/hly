@@ -1,2 +1,148 @@
--- create table users (id int primary key AUTO_INCREMENT, uid varchar(50) not null, pwd varchar(100) not null, name varchar(50), UNIQUE KEY(uid) );
+--create table bom (
+--	id bigint not null auto_increment,
+--	create_date datetime default now() not null,
+--	formula_id bigint,
+--	order_id bigint,
+--	product_id bigint,
+--	primary key (id));
+--
+--create table bom_item (
+--	calc_quantity float not null,
+--	quantity float not null,
+--	bom_id bigint not null,
+--	material_id bigint not null,
+--	primary key (bom_id, material_id));
+--
+--create table client (
+--	id bigint not null auto_increment,
+--	address varchar(200),
+--	comment varchar(255),
+--	contact varchar(30),
+--	contract_no varchar(50) not null,
+--	delivery_address varchar(200),
+--	full_name varchar(100),
+--	metadata varchar(500),
+--	name varchar(50) not null,
+--	phone varchar(30),
+--	post_code varchar(6),
+--	settlement_policy varchar(100),
+--	type_id bigint,
+--	primary key (id));
+--
+--create table client_type (
+--	id bigint not null auto_increment,
+--	name varchar(50) not null,
+--	primary key (id));
+--
+--create table formula (
+--	id bigint not null auto_increment,
+--	change_log varchar(200),
+--	comment varchar(255),
+--	create_date datetime not null,
+--	metadata varchar(500),
+--	revision integer not null,
+--	product_id bigint,
+--	primary key (id));
+--
+--create table formula_item (
+--	quantity float not null,
+--	formula_id bigint not null,
+--	material_id bigint not null,
+--	primary key (formula_id, material_id));
+--
+--create table material (
+--	id bigint not null auto_increment,
+--	code varchar(20),
+--	comment varchar(255),
+--	metadata varchar(500),
+--	name varchar(50) not null,
+--	safe_quantity float not null,
+--	type_id bigint,
+--	primary key (id));
+--
+--create table material_type (
+--	id bigint not null auto_increment,
+--	name varchar(50) not null,
+--	primary key (id));
+--
+--create table `order` (
+--	id bigint not null auto_increment,
+--	actual_value float,
+--	comment varchar(255),
+--	delivery_date datetime not null,
+--	metadata varchar(500),
+--	no varchar(20) not null,
+--	order_date datetime not null,
+--	status tinyint default 0 not null,
+--	tax bit not null,
+--	value float not null,
+--	client_id bigint not null,
+--	primary key (id));
+--
+--create table order_item (
+--	actual_quantity float,
+--	price float not null,
+--	quantity float not null,
+--	`order_id` bigint not null,
+--	product_id bigint not null,
+--	primary key (`order_id`, product_id));
+--
+--create table produce_condition (
+--	input_temperature integer not null,
+--	main_miller_rpm integer not null,
+--	mesh integer not null,
+--	mix_time integer not null,
+--	output_temperature integer not null,
+--	screw_rpm integer not null,
+--	second_miller_rpm integer not null,
+--	formula_id bigint not null,
+--	primary key (formula_id));
+--
+--create table product (
+--	id bigint not null auto_increment,
+--	base varchar(50),
+--	code varchar(20) not null,
+--	color varchar(20),
+--	comment varchar(255),
+--	metadata varchar(500),
+--	primary key (id));
+--
+--
+--alter table client add constraint UK_923db0lpkwf1yl7ff5hnfvt7w unique (contract_no);
+--
+--alter table formula add constraint uniq_formula_revision unique (product_id, revision);
+--
+--alter table material add constraint UK_dvc457p6ww41n1b9vs12e9f36 unique (code);
+--
+--alter table `order` add constraint UK_e8399sgf6y62t04adtfm5e2ia unique (no);
+--
+--alter table product add constraint UK_h3w5r1mx6d0e5c6um32dgyjej unique (code);
+--
+--alter table bom add constraint fk_bom_formula_id foreign key (formula_id) references formula (id);
+--
+--alter table bom add constraint FKpl04bpbc2t75bmdqmhuectmpr foreign key (order_id, product_id) references order_item (`order_id`, product_id);
+--
+--alter table bom_item add constraint fk_bom_item_bom foreign key (bom_id) references bom (id) ON DELETE CASCADE;
+--
+--alter table bom_item add constraint fk_bom_material foreign key (material_id) references material (id);
+--
+--alter table client add constraint fk_client_type foreign key (type_id) references client_type (id);
+--
+--alter table formula add constraint fk_formula_rev_product foreign key (product_id) references product (id);
+--
+--alter table formula_item add constraint fk_formula_item_formula foreign key (formula_id) references formula (id) ON DELETE CASCADE;
+--
+--alter table formula_item add constraint fk_formula_item_material foreign key (material_id) references material (id);
+--
+--alter table material add constraint fk_material_type foreign key (type_id) references material_type (id);
+--
+--alter table `order` add constraint fk_client_order foreign key (client_id) references client (id);
+--
+--alter table order_item add constraint fk_order_item_order foreign key (`order_id`) references `order` (id) ON DELETE CASCADE;
+--
+--alter table order_item add constraint fk_order_item_product foreign key (product_id) references product (id);
+--
+--alter table produce_condition add constraint fk_formula_produce_cond foreign key (formula_id) references formula (id) ON DELETE CASCADE;
+
+
 select 1;
