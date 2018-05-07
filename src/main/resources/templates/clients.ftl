@@ -34,8 +34,8 @@
    <Protection/>
   </Style>
  </Styles>
- <Worksheet ss:Name="订单">
-  <Table ss:ExpandedColumnCount="9" ss:ExpandedRowCount="${orders?size + 1}" x:FullColumns="1"
+ <Worksheet ss:Name="客户">
+  <Table ss:ExpandedColumnCount="12" ss:ExpandedRowCount="${clients?size + 1}" x:FullColumns="1"
    x:FullRows="1" ss:DefaultColumnWidth="54" ss:DefaultRowHeight="13.5">
    <Column ss:Width="39"/>
    <Column ss:Index="3" ss:Width="76.5"/>
@@ -45,41 +45,32 @@
    <Column ss:Index="8" ss:Width="69.75"/>
    <Row>
     <Cell><Data ss:Type="String">序号</Data></Cell>
-    <Cell><Data ss:Type="String">订单编号</Data></Cell>
-    <Cell><Data ss:Type="String">客户</Data></Cell>
-    <Cell><Data ss:Type="String">下单时间</Data></Cell>
-    <Cell><Data ss:Type="String">发货时间</Data></Cell>
-    <Cell><Data ss:Type="String">总额</Data></Cell>
-    <Cell><Data ss:Type="String">是否含税</Data></Cell>
-    <Cell><Data ss:Type="String">状态</Data></Cell>
+    <Cell><Data ss:Type="String">合同号</Data></Cell>
+    <Cell><Data ss:Type="String">名称</Data></Cell>
+    <Cell><Data ss:Type="String">全名</Data></Cell>
+    <Cell><Data ss:Type="String">类型</Data></Cell>
+    <Cell><Data ss:Type="String">结算政策</Data></Cell>
+    <Cell><Data ss:Type="String">邮编</Data></Cell>
+    <Cell><Data ss:Type="String">地址</Data></Cell>
+    <Cell><Data ss:Type="String">发货地址</Data></Cell>
+    <Cell><Data ss:Type="String">联系人</Data></Cell>
+    <Cell><Data ss:Type="String">联系电话</Data></Cell>
     <Cell><Data ss:Type="String">备注</Data></Cell>
    </Row>
-   <#list orders as order>
+   <#list clients as client>
      <Row>
-      <Cell><Data ss:Type="String">${order.id!}</Data></Cell>
-      <Cell><Data ss:Type="String">${order.no!}</Data></Cell>
-      <Cell><Data ss:Type="String">${order.client.name!}</Data></Cell>
-      <Cell><Data ss:Type="String">${order.orderDate?date}</Data></Cell>
-      <Cell><Data ss:Type="String">${order.deliveryDate?date}</Data></Cell>
-      <Cell><Data ss:Type="Number">${order.value!}</Data></Cell>
-      <Cell><Data ss:Type="String">${order.tax?string('是', '否')}</Data></Cell>
-      <Cell><Data ss:Type="String"><#compress>
-        <#switch order.status>
-          <#case 0>
-            已签订
-            <#break>
-          <#case 1>
-            执行中
-            <#break>
-          <#case 2>
-            已完成
-            <#break>
-          <#case 3>
-            取消
-            <#break>
-        </#switch>
-        </#compress></Data></Cell>
-      <Cell><Data ss:Type="String">${order.comment!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.id!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.contract_no!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.name!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.full_name!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.type.name!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.settlement_policy!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.post_code!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.address!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.delivery_address!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.contact!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.phone!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.comment!}</Data></Cell>
      </Row>
    </#list>
   </Table>
