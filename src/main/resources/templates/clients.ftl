@@ -60,14 +60,14 @@
    <#list clients as client>
      <Row>
       <Cell><Data ss:Type="String">${client.id!}</Data></Cell>
-      <Cell><Data ss:Type="String">${client.contract_no!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.contractNo!}</Data></Cell>
       <Cell><Data ss:Type="String">${client.name!}</Data></Cell>
-      <Cell><Data ss:Type="String">${client.full_name!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.fullName!}</Data></Cell>
       <Cell><Data ss:Type="String">${client.type.name!}</Data></Cell>
-      <Cell><Data ss:Type="String">${client.settlement_policy!}</Data></Cell>
-      <Cell><Data ss:Type="String">${client.post_code!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.settlementPolicy!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.postCode!}</Data></Cell>
       <Cell><Data ss:Type="String">${client.address!}</Data></Cell>
-      <Cell><Data ss:Type="String">${client.delivery_address!}</Data></Cell>
+      <Cell><Data ss:Type="String">${client.deliveryAddress!}</Data></Cell>
       <Cell><Data ss:Type="String">${client.contact!}</Data></Cell>
       <Cell><Data ss:Type="String">${client.phone!}</Data></Cell>
       <Cell><Data ss:Type="String">${client.comment!}</Data></Cell>
