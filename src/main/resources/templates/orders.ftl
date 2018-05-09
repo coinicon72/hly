@@ -33,8 +33,11 @@
    <NumberFormat/>
    <Protection/>
   </Style>
+  <Style ss:ID="s74">
+   <Interior ss:Color="#DDEBF7" ss:Pattern="Solid"/>
+  </Style>
  </Styles>
- <Worksheet ss:Name="订单">
+ <Worksheet ss:Name="订单总览">
   <Table ss:ExpandedColumnCount="9" ss:ExpandedRowCount="${orders?size + 1}" x:FullColumns="1"
    x:FullRows="1" ss:DefaultColumnWidth="54" ss:DefaultRowHeight="13.5">
    <Column ss:Width="39"/>
@@ -59,10 +62,10 @@
       <Cell><Data ss:Type="String">${order.id!}</Data></Cell>
       <Cell><Data ss:Type="String">${order.no!}</Data></Cell>
       <Cell><Data ss:Type="String">${order.client.name!}</Data></Cell>
-      <Cell><Data ss:Type="String">${order.orderDate?date}</Data></Cell>
-      <Cell><Data ss:Type="String">${order.deliveryDate?date}</Data></Cell>
+      <Cell><Data ss:Type="String">${order.orderDate?string["yyyy-MM-dd"]}</Data></Cell>
+      <Cell><Data ss:Type="String">${order.deliveryDate?string["yyyy-MM-dd"]}</Data></Cell>
       <Cell><Data ss:Type="Number">${order.value!}</Data></Cell>
-      <Cell><Data ss:Type="String">${order.tax?string('是', '否')}</Data></Cell>
+      <Cell><Data ss:Type="String">${order.tax?string('是', '')}</Data></Cell>
       <Cell><Data ss:Type="String"><#compress>
         <#switch order.status>
           <#case 0>
@@ -109,4 +112,89 @@
    <ProtectScenarios>False</ProtectScenarios>
   </WorksheetOptions>
  </Worksheet>
+
+ <#list orders as order>
+ <Worksheet ss:Name="${order.no!}">
+  <Table ss:ExpandedColumnCount="8" ss:ExpandedRowCount="${order.items?size + 4}" x:FullColumns="1"
+   x:FullRows="1" ss:DefaultColumnWidth="54" ss:DefaultRowHeight="13.5">
+   <Column ss:Width="63"/>
+   <Column ss:Index="3" ss:Width="57" ss:Span="1"/>
+   <Column ss:Index="5" ss:Width="31.5"/>
+   <Column ss:Index="7" ss:Width="42.75"/>
+   <Column ss:Width="31.5"/>
+   <Row>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">订单编号</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">客户</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">下单时间</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">发货时间</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">总额</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">是否含税</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">状态</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">备注</Data></Cell>
+   </Row>
+   <Row>
+      <Cell><Data ss:Type="String">${order.no!}</Data></Cell>
+      <Cell><Data ss:Type="String">${order.client.name!}</Data></Cell>
+      <Cell><Data ss:Type="String">${order.orderDate?string["yyyy-MM-dd"]}</Data></Cell>
+      <Cell><Data ss:Type="String">${order.deliveryDate?string["yyyy-MM-dd"]}</Data></Cell>
+      <Cell><Data ss:Type="Number">${order.value!}</Data></Cell>
+      <Cell><Data ss:Type="String">${order.tax?string('是', '')}</Data></Cell>
+      <Cell><Data ss:Type="String"><#compress>
+        <#switch order.status>
+          <#case 0>
+            已签订
+            <#break>
+          <#case 1>
+            执行中
+            <#break>
+          <#case 2>
+            已完成
+            <#break>
+          <#case 3>
+            取消
+            <#break>
+        </#switch>
+        </#compress></Data></Cell>
+      <Cell><Data ss:Type="String">${order.comment!}</Data></Cell>
+   </Row>
+   <Row ss:Index="4">
+    <Cell ss:StyleID="s74"><Data ss:Type="String">产品编号</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">产品颜色</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">附着材质</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">数量</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">单价</Data></Cell>
+    <Cell ss:StyleID="s74"><Data ss:Type="String">小计</Data></Cell>
+   </Row>
+
+   <#list order.items as item>
+   <Row>
+    <Cell><Data ss:Type="String">${item.product.code!}</Data></Cell>
+    <Cell><Data ss:Type="String">${item.product.color!}</Data></Cell>
+    <Cell><Data ss:Type="String">${item.product.base!}</Data></Cell>
+    <Cell><Data ss:Type="Number">${item.quantity}</Data></Cell>
+    <Cell><Data ss:Type="Number">${item.price}</Data></Cell>
+    <Cell><Data ss:Type="Number">${(item.quantity * item.price)?string["0.##"]}</Data></Cell>
+   </Row>
+   </#list>
+
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <PageSetup>
+    <Header x:Margin="0.3"/>
+    <Footer x:Margin="0.3"/>
+    <PageMargins x:Bottom="0.75" x:Left="0.7" x:Right="0.7" x:Top="0.75"/>
+   </PageSetup>
+   <Selected/>
+   <Panes>
+    <Pane>
+     <Number>3</Number>
+     <ActiveRow>8</ActiveRow>
+     <ActiveCol>5</ActiveCol>
+    </Pane>
+   </Panes>
+   <ProtectObjects>False</ProtectObjects>
+   <ProtectScenarios>False</ProtectScenarios>
+  </WorksheetOptions>
+ </Worksheet>
+</#list>
 </Workbook>

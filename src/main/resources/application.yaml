@@ -3,7 +3,7 @@
 #    org.apache.shiro: DEBUG
 
 server:
-#  port: 9000
+  port: 8081
 
 spring:
 
@@ -26,6 +26,10 @@ spring:
   data:
     rest:
       basePath: /api/data
+
+  freemarker:
+    cache: false
+    template_update_delay: 0
 #shiro:
 #  web:
 #    enabled: false
