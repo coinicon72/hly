@@ -115,7 +115,7 @@
     <Cell ss:StyleID="s69"><Data ss:Type="String">客户</Data></Cell>
     <Cell ss:StyleID="s69"><Data ss:Type="String">${bom.orderItem.order.client.name}</Data></Cell>
     <Cell ss:StyleID="s69"><Data ss:Type="String">下单日期</Data></Cell>
-    <Cell ss:StyleID="s69"><Data ss:Type="String">${bom.orderItem.order.orderDate?date}</Data></Cell>
+    <Cell ss:StyleID="s69"><Data ss:Type="String">${bom.orderItem.order.orderDate?string["yyyy-MM-dd"]}</Data></Cell>
     <Cell ss:MergeDown="3" ss:StyleID="s68"><Data ss:Type="String">生产条件</Data></Cell>
     <Cell ss:StyleID="s69"><Data ss:Type="String">混合时间</Data></Cell>
     <Cell ss:StyleID="s69"><Data ss:Type="Number">${bom.formula.produceCondition.mixTime}</Data></Cell>
@@ -126,7 +126,7 @@
     <Cell ss:StyleID="s69"><Data ss:Type="String">产品型号</Data></Cell>
     <Cell ss:StyleID="s69"><Data ss:Type="String">${bom.formula.product.code}</Data></Cell>
     <Cell ss:StyleID="s69"><Data ss:Type="String">出货日期</Data></Cell>
-    <Cell ss:StyleID="s69"><Data ss:Type="String">${bom.orderItem.order.deliveryDate?date}</Data></Cell>
+    <Cell ss:StyleID="s69"><Data ss:Type="String">${bom.orderItem.order.deliveryDate?string["yyyy-MM-dd"]}</Data></Cell>
     <Cell ss:Index="6" ss:StyleID="s69"><Data ss:Type="String">进料挤温</Data></Cell>
     <Cell ss:StyleID="s69"><Data ss:Type="Number">${bom.formula.produceCondition.inputTemperature}</Data></Cell>
     <Cell ss:StyleID="s69"><Data ss:Type="String">副磨转速</Data></Cell>

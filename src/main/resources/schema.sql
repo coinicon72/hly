@@ -57,7 +57,7 @@
 --	metadata varchar(500),
 --	name varchar(50) not null,
 --	safe_quantity float not null,
---	type_id bigint,
+--	type_id bigint not null,
 --	primary key (id));
 --
 --create table material_type (

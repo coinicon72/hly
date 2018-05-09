@@ -1,8 +1,6 @@
 package com.universal.hly.controller.web
 
-import com.universal.hly.dao.BomRepository
-import com.universal.hly.dao.ClientRepository
-import com.universal.hly.dao.OrderRepository
+import com.universal.hly.dao.*
 import com.universal.hly.model.Order
 import freemarker.template.Configuration
 import org.springframework.beans.factory.annotation.Autowired
@@ -11,10 +9,8 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.servlet.ModelAndView
-import org.springframework.web.servlet.view.freemarker.FreeMarkerConfig
+import java.util.*
 import javax.servlet.http.HttpServletResponse
-import java.util.HashMap
 import javax.transaction.Transactional
 
 
@@ -44,6 +40,12 @@ class ExportController {
 
     @Autowired
     var clientController: ClientRepository? = null
+
+    @Autowired
+    var productRepository: ProductRepository? = null
+
+    @Autowired
+    var materialRepository: MaterialRepository? = null
 
     @Autowired
     var bomRepository: BomRepository? = null
@@ -95,6 +97,30 @@ class ExportController {
         model.put("boms", boms!!)
 
         exportExcel(response, "boms.ftl", "boms.xls", model)
+    }
+
+
+    @GetMapping(value = ["/products"])
+    fun exportProducts(response: HttpServletResponse) {
+        val products = productRepository?.findAll()
+//        val orders = orderService?.listOrders()
+
+        val model = HashMap<String, Any>()
+        model.put("products", products!!)
+
+        exportExcel(response, "products.ftl", "products.xls", model)
+    }
+
+
+    @GetMapping(value = ["/materials"])
+    fun exportMaterials(response: HttpServletResponse) {
+        val materials = materialRepository?.findAll()
+//        val orders = orderService?.listOrders()
+
+        val model = HashMap<String, Any>()
+        model.put("materials", materials!!)
+
+        exportExcel(response, "materials.ftl", "materials.xls", model)
     }
 
     private fun exportExcel(response: HttpServletResponse, templateName: String, fileName: String, model: Any) {
