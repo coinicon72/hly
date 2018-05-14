@@ -109,6 +109,26 @@ interface BomItemRepository : MyBaseRepository<BomItem, BomItemKey> {
 }
 
 
+interface StockRepository : MyBaseRepository<Stock, Long> {
+}
+
+
+interface InventoryRepository : MyBaseRepository<Inventory, Int> {
+}
+
+
+interface StockHistoryRepository : MyBaseRepository<StockHistory, Int> {
+}
+
+
+interface StockChangingRepository : MyBaseRepository<StockChanging, Int> {
+}
+
+
+interface StockChangingItemRepository : MyBaseRepository<StockChangingItem, Int> {
+}
+
+
 // ==============================================================
 @Component
 class FormulaItemKeyConverter : BackendIdConverter {

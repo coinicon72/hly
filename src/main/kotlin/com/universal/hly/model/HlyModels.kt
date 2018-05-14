@@ -521,3 +521,83 @@ data class BomItemKey(
         val bom: Long = 0,
         val material: Long = 0
 ) : Serializable
+
+
+// ==================
+@Entity
+data class Stock(
+        @Id
+        val id: Long? = null,
+
+        @MapsId
+        @OneToOne
+        val material: Material,
+
+        val quantity: Float = 0f,
+        val price: Float = 0f
+)
+
+@Entity
+data class Inventory(
+        @Id
+        @GeneratedValue
+        val id: Int,
+
+        val date: Date = Date(),
+
+        val desc: String? = null
+)
+
+
+@Entity
+data class StockHistory(
+        @Id
+        val id: Int,
+
+        @MapsId
+        @ManyToOne
+        val inventory: Inventory,
+
+        @ManyToOne
+        val material: Material,
+
+        val quantity: Float = 0f,
+        val price: Float = 0f
+)
+
+
+@Entity
+data class StockChanging (
+        @Id
+        @GeneratedValue
+        val id: Int,
+
+        val date: Date = Date(),
+
+        val type: Int = 0,
+
+        val amount: Float = 0f,
+
+        val department: String? = null,
+
+        val pickup: String? = null,
+
+        val keeper: String? = null
+)
+
+
+@Entity
+data class StockChangingItem (
+        @Id
+        val id: Int,
+
+        @MapsId
+        @ManyToOne
+        val stockChanging: StockChanging,
+
+        @ManyToOne
+        val material: Material,
+
+        val quantity: Float = 0f,
+        val price: Float = 0f
+)

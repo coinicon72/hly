@@ -145,4 +145,53 @@
 --alter table produce_condition add constraint fk_formula_produce_cond foreign key (formula_id) references formula (id) ON DELETE CASCADE;
 
 
+--CREATE TABLE `stock` (
+--  `material_id` bigint(20) NOT NULL,
+--  `quantity` float NOT NULL,
+--  `price` float NOT NULL,
+--  PRIMARY KEY (`material_id`),
+--  CONSTRAINT `fk_stock_materail` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`) ON UPDATE NO ACTION
+--) COMMENT='库存';
+--
+--CREATE TABLE `inventory` (
+--  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+--  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--  `desc` varchar(200) DEFAULT NULL,
+--  PRIMARY KEY (`id`)
+--) COMMENT='盘点';
+--
+--CREATE TABLE `stock_change` (
+--  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+--  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--  `type` tinyint(4) NOT NULL COMMENT '0 = in-stock, 入库\n1 = out-stock, 出库\n2 = inventory, 盘点',
+--  `department` varchar(50) DEFAULT NULL,
+--  `pickup` varchar(30) NOT NULL,
+--  `keeper` varchar(30) NOT NULL,
+--  `amount` float NOT NULL,
+--  PRIMARY KEY (`id`)
+--) COMMENT='库存变化';
+--
+--CREATE TABLE `stock_change_item` (
+--  `id` int(10) unsigned NOT NULL,
+--  `material_id` bigint(20) NOT NULL,
+--  `quantity` float NOT NULL,
+--  `price` float NOT NULL,
+--  PRIMARY KEY (`id`),
+--  KEY `fk_stock_change_materail_idx` (`material_id`),
+--  CONSTRAINT `fk_stock_change_item_stock_change` FOREIGN KEY (`id`) REFERENCES `stock_chang` (`id`) ON UPDATE CASCADE,
+--  CONSTRAINT `fk_stock_change_materail` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`) ON UPDATE CASCADE
+--) COMMENT='库存变化条目';
+--
+--CREATE TABLE `stock_history` (
+--  `id` int(10) unsigned NOT NULL,
+--  `material_id` bigint(20) NOT NULL,
+--  `quantity` float NOT NULL,
+--  `price` float NOT NULL,
+--  PRIMARY KEY (`id`,`material_id`),
+--  KEY `fk_stock_history_material_idx` (`material_id`),
+--  CONSTRAINT `fk_stock_history_inventory` FOREIGN KEY (`id`) REFERENCES `inventory` (`id`) ON UPDATE CASCADE,
+--  CONSTRAINT `fk_stock_history_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`) ON UPDATE CASCADE
+--) COMMENT='库存历史';
+
+
 select 1;
