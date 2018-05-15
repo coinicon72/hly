@@ -527,11 +527,12 @@ data class BomItemKey(
 @Entity
 data class Stock(
         @Id
-        val id: Long? = null,
+        val id: Long,
 
         @MapsId
         @OneToOne
-        val material: Material,
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_material"))
+        val material: Material? = null,
 
         val quantity: Float = 0f,
         val price: Float = 0f
@@ -545,25 +546,34 @@ data class Inventory(
 
         val date: Date = Date(),
 
-        val desc: String? = null
+        val comment: String? = null
 )
 
 
 @Entity
 data class StockHistory(
-        @Id
-        val id: Int,
+        @EmbeddedId
+        val id: StockHistoryKey,
 
-        @MapsId
+        @MapsId(value = "inventory")
         @ManyToOne
-        val inventory: Inventory,
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_history_inventory"))
+        val inventory: Inventory? = null,
 
+        @MapsId(value = "material")
         @ManyToOne
-        val material: Material,
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_history_material"))
+        val material: Material? = null,
 
         val quantity: Float = 0f,
         val price: Float = 0f
-)
+) : Serializable
+
+@Embeddable
+data class StockHistoryKey(
+        val inventory: Int = 0,
+        val material: Long = 0
+) : Serializable
 
 
 @Entity
@@ -572,32 +582,41 @@ data class StockChanging (
         @GeneratedValue
         val id: Int,
 
-        val date: Date = Date(),
-
         val type: Int = 0,
 
+        val applicant: String? = null,
+        val applyingDate: Date = Date(),
+        val application: String? = null,
+        val department: String? = null,
         val amount: Float = 0f,
 
-        val department: String? = null,
-
-        val pickup: String? = null,
-
-        val keeper: String? = null
+        val keeper: String? = null,
+        val executeDate: Date? = null,
+        val comment: String? = null
 )
 
 
 @Entity
 data class StockChangingItem (
-        @Id
-        val id: Int,
+        @EmbeddedId
+        val id: StockChangingItemKey,
 
-        @MapsId
+        @MapsId(value = "stockChanging")
         @ManyToOne
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_changing_item_stock_changing"))
         val stockChanging: StockChanging,
 
+        @MapsId(value = "material")
         @ManyToOne
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_changing_material"))
         val material: Material,
 
         val quantity: Float = 0f,
         val price: Float = 0f
-)
+) : Serializable
+
+@Embeddable
+data class StockChangingItemKey(
+        val stockChanging: Int = 0,
+        val material: Long = 0
+) : Serializable
