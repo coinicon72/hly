@@ -447,6 +447,7 @@ interface InlineMaterialType {
     fun getName(): String
     fun getType(): MaterialType
     fun getSafeQuantity(): Float
+    fun getSpec(): String
     fun getComment(): String
     fun getMetadata(): String
 }

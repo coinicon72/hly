@@ -57,7 +57,7 @@
 --	metadata varchar(500),
 --	name varchar(50) not null,
 --	safe_quantity float not null,
---  spec varchar(20),
+--  spec varchar(20) null,
 --	type_id bigint not null,
 --	primary key (id));
 --
@@ -179,8 +179,8 @@
 --  `application` varchar(200) default null,
 --  `department` varchar(50) DEFAULT NULL,
 --  `amount` float NOT NULL,
---  `keeper` varchar(30) NOT NULL,
---  `execute_date` timestamp default null,
+--  `keeper` varchar(30) NULL,
+--  `execute_date` timestamp null,
 --  `comment` varchar(200) default null,
 --  PRIMARY KEY (`id`)
 --) COMMENT='库存变化';
