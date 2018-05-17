@@ -430,6 +430,8 @@ data class Material(
         @Column(nullable = false)
         val safeQuantity: Float = 0f,
 
+        val spec: String? = null,
+
 //        val unit: String,
 
         val comment: String? = null,
@@ -582,6 +584,7 @@ data class StockChanging (
         @GeneratedValue
         val id: Int,
 
+        // 1 = in-stock, 入库; -1 = out-stock, 出库; 0 = inventory
         val type: Int = 0,
 
         val applicant: String? = null,

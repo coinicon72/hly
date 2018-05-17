@@ -57,6 +57,7 @@
 --	metadata varchar(500),
 --	name varchar(50) not null,
 --	safe_quantity float not null,
+--  spec varchar(20),
 --	type_id bigint not null,
 --	primary key (id));
 --
@@ -172,7 +173,7 @@
 --
 --CREATE TABLE `stock_changing` (
 --  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
---  `type` tinyint(4) NOT NULL COMMENT '0 = in-stock, 入库\n1 = out-stock, 出库\n2 = inventory, 盘点',
+--  `type` tinyint(4) NOT NULL COMMENT '1 = in-stock, 入库\n-1 = out-stock, 出库\n0 = inventory, 盘点',
 --  `apply_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 --  `applicant` varchar(30) NOT NULL,
 --  `application` varchar(200) default null,
