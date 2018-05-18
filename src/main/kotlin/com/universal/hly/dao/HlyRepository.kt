@@ -109,21 +109,45 @@ interface BomItemRepository : MyBaseRepository<BomItem, BomItemKey> {
 }
 
 
+// POST:   {"id": 5, "material": {"id": 5}, "quantity": 1.3, "price": 4.4}
+// DELETE: stocks/5
+interface StockRepository : MyBaseRepository<Stock, Long> {
+}
+
+// POST: {"comment": "test again"}
+interface InventoryRepository : MyBaseRepository<Inventory, Int> {
+}
+
+// POST {"id": {"inventory": 0, "material": 0}, "inventory": {"id":2}, "material": {"id":5}, "quantity": 1.3, "price": 4.4}
+interface StockHistoryRepository : MyBaseRepository<StockHistory, Int> {
+}
+
+// POST {"type": 2, "applicant": "whoelse", "keeper": "kevin", "amount": 4.4}
+interface StockChangingRepository : MyBaseRepository<StockChanging, Int> {
+    // @Query("select * from stock_changing b where b.order_id = ?1", nativeQuery = true)
+    fun findByType(@Param("type") type: Int): List<StockChanging>
+}
+
+// POST {"id": {"stockChanging": 0, "material": 0}, "stockChanging": {"id":1}, "material": {"id":6}, "quantity": -1.3, "price": 4.4}
+interface StockChangingItemRepository : MyBaseRepository<StockChangingItem, Int> {
+}
+
+
 // ==============================================================
 @Component
 class FormulaItemKeyConverter : BackendIdConverter {
 
-    override fun fromRequestId(id: String, entityType: Class<*> ) : Serializable {
+    override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
         val parts = id.split("_")
         return FormulaItemKey(parts[0].toLong(), parts[1].toLong())
     }
 
-    override fun toRequestId(source : Serializable, entityType: Class<*>) : String  {
-        val id: FormulaItemKey  = source as FormulaItemKey
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: FormulaItemKey = source as FormulaItemKey
         return String.format("%s_%s", id.formula, id.material)
     }
 
-    override fun supports(type: Class<*> ): Boolean  {
+    override fun supports(type: Class<*>): Boolean {
         return FormulaItem::class.java == type
     }
 }
@@ -131,17 +155,17 @@ class FormulaItemKeyConverter : BackendIdConverter {
 @Component
 class OrderItemKeyConverter : BackendIdConverter {
 
-    override fun fromRequestId(id: String, entityType: Class<*> ) : Serializable {
+    override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
         val parts = id.split("_")
         return OrderItemKey(parts[0].toLong(), parts[1].toLong())
     }
 
-    override fun toRequestId(source : Serializable, entityType: Class<*>) : String  {
-        val id: OrderItemKey  = source as OrderItemKey
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: OrderItemKey = source as OrderItemKey
         return String.format("%s_%s", id.order, id.product)
     }
 
-    override fun supports(type: Class<*> ): Boolean  {
+    override fun supports(type: Class<*>): Boolean {
         return OrderItem::class.java == type
     }
 }
@@ -149,17 +173,53 @@ class OrderItemKeyConverter : BackendIdConverter {
 @Component
 class BomItemKeyConverter : BackendIdConverter {
 
-    override fun fromRequestId(id: String, entityType: Class<*> ) : Serializable {
+    override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
         val parts = id.split("_")
         return BomItemKey(parts[0].toLong(), parts[1].toLong())
     }
 
-    override fun toRequestId(source : Serializable, entityType: Class<*>) : String  {
-        val id: BomItemKey  = source as BomItemKey
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: BomItemKey = source as BomItemKey
         return String.format("%s_%s", id.bom, id.material)
     }
 
-    override fun supports(type: Class<*> ): Boolean  {
+    override fun supports(type: Class<*>): Boolean {
         return BomItem::class.java == type
     }
 }
+
+@Component
+class StockHistoryKeyConverter : BackendIdConverter {
+
+    override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
+        val parts = id.split("_")
+        return StockHistoryKey(parts[0].toInt(), parts[1].toLong())
+    }
+
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: StockHistoryKey = source as StockHistoryKey
+        return String.format("%s_%s", id.inventory, id.material)
+    }
+
+    override fun supports(type: Class<*>): Boolean {
+        return StockHistory::class.java == type
+    }
+}
+
+// @Component
+// class StockChangingItemKeyConverter : BackendIdConverter {
+// 
+//     override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
+//         val parts = id.split("_")
+//         return StockChangingItemKey(parts[0].toInt(), parts[1].toLong())
+//     }
+// 
+//     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+//         val id: StockChangingItemKey = source as StockChangingItemKey
+//         return String.format("%s_%s", id.stockChanging, id.material)
+//     }
+// 
+//     override fun supports(type: Class<*>): Boolean {
+//         return StockChangingItem::class.java == type
+//     }
+// }
