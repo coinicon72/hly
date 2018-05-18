@@ -57,7 +57,7 @@
 --	metadata varchar(500),
 --	name varchar(50) not null,
 --	safe_quantity float not null,
---  spec varchar(20) null,
+-- 	spec varchar(20) null,
 --	type_id bigint not null,
 --	primary key (id));
 --
@@ -146,7 +146,7 @@
 --alter table produce_condition add constraint fk_formula_produce_cond foreign key (formula_id) references formula (id) ON DELETE CASCADE;
 
 
---CREATE TABLE `stock` (
+--CREATE TABLE `repo` (
 --  `material_id` bigint(20) NOT NULL,
 --  `quantity` float NOT NULL,
 --  `price` float NOT NULL,
@@ -161,7 +161,7 @@
 --  PRIMARY KEY (`id`)
 --) COMMENT='盘点';
 --
---CREATE TABLE `stock_history` (
+--CREATE TABLE `repo_history` (
 --  `inventory_id` int(10) unsigned NOT NULL,
 --  `material_id` bigint(20) NOT NULL,
 --  `quantity` float NOT NULL,
@@ -171,14 +171,15 @@
 --  CONSTRAINT `fk_stock_history_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
 --) COMMENT='库存历史';
 --
---CREATE TABLE `stock_changing` (
+--CREATE TABLE `repo_changing` (
 --  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
---  `type` tinyint(4) NOT NULL COMMENT '1 = in-stock, 入库\n-1 = out-stock, 出库\n0 = inventory, 盘点',
+--  `type` tinyint(4) NOT NULL default 0 COMMENT '1 = in-stock, 入库\n-1 = out-stock, 出库\n0 = inventory, 盘点',
+--  `status` tinyint(4) NOT NULL default 0 COMMENT '0 = init; 1 = submitted; 2 = executed; -1 = rejected',
 --  `apply_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 --  `applicant` varchar(30) NOT NULL,
---  `application` varchar(200) default null,
---  `department` varchar(50) DEFAULT NULL,
---  `amount` float NOT NULL,
+--  `application` varchar(200) null default null,
+--  `department` varchar(50) null DEFAULT NULL,
+--  `amount` float NULL,
 --  `keeper` varchar(30) NULL,
 --  `execute_date` timestamp null,
 --  `comment` varchar(200) default null,
