@@ -528,13 +528,13 @@ data class BomItemKey(
 
 // ==================
 @Entity
-data class Stock(
+data class Repo(
         @Id
         val id: Long,
 
         @MapsId
         @OneToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_material"))
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_material"))
         val material: Material? = null,
 
         val quantity: Float = 0f,
@@ -554,18 +554,18 @@ data class Inventory(
 
 
 @Entity
-data class StockHistory(
+data class RepoHistory(
         @EmbeddedId
-        val id: StockHistoryKey,
+        val id: RepoHistoryKey,
 
         @MapsId(value = "inventory")
         @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_history_inventory"))
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_history_inventory"))
         val inventory: Inventory? = null,
 
         @MapsId(value = "material")
         @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_history_material"))
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_history_material"))
         val material: Material? = null,
 
         val quantity: Float = 0f,
@@ -573,20 +573,75 @@ data class StockHistory(
 ) : Serializable
 
 @Embeddable
-data class StockHistoryKey(
+data class RepoHistoryKey(
         val inventory: Int = 0,
         val material: Long = 0
 ) : Serializable
 
 
 @Entity
-data class StockChanging (
+@NamedNativeQueries(
+        NamedNativeQuery(name = "RepoChanging.previewStockIn",
+                query = "call preview_stock_in_changing(:cid)",
+                resultClass = StockInPreview::class,
+                resultSetMapping = "stockInPreview"
+        ),
+        NamedNativeQuery(name = "RepoChanging.previewStockOut",
+                query = "call preview_stock_out_changing(:cid)",
+                resultClass = StockOutPreview::class,
+                resultSetMapping = "stockOutPreview"
+        )
+)
+@SqlResultSetMappings(SqlResultSetMapping(name = "stockInPreview",
+        classes = [ConstructorResult(targetClass = StockInPreview::class,
+                columns = [
+                    ColumnResult(name = "material_id", type = Int::class),
+                    ColumnResult(name = "current_quantity", type = Float::class),
+                    ColumnResult(name = "current_price", type = Float::class),
+                    ColumnResult(name = "in_quantity", type = Float::class),
+                    ColumnResult(name = "in_price", type = Float::class),
+                    ColumnResult(name = "new_quantity", type = Float::class),
+                    ColumnResult(name = "new_price", type = Float::class)
+                ])]),
+        SqlResultSetMapping(name = "stockOutPreview",
+                classes = [ConstructorResult(targetClass = StockOutPreview::class,
+                        columns = [
+                            ColumnResult(name = "material_id", type = Int::class),
+                            ColumnResult(name = "quantity", type = Float::class),
+                            ColumnResult(name = "require_quantity", type = Float::class),
+                            ColumnResult(name = "fulfilled", type = Boolean::class)
+                        ])])
+)
+@NamedStoredProcedureQueries(
+    NamedStoredProcedureQuery(
+            name = "applyStockInChanging",
+            procedureName = "apply_stock_in_changing",
+//            resultClasses = { Car.class },
+            parameters = [
+                StoredProcedureParameter( name = "cid", type = Integer::class, mode = ParameterMode.IN),
+                StoredProcedureParameter( name = "executor", type = String::class, mode = ParameterMode.IN),
+                StoredProcedureParameter( name = "comment", type = String::class, mode = ParameterMode.IN)
+            ]
+    ),
+    NamedStoredProcedureQuery(
+            name = "applyStockOutChanging",
+            procedureName = "apply_stock_out_changing",
+//            resultClasses = { Car.class },
+            parameters = [
+                StoredProcedureParameter( name = "cid", type = Integer::class, mode = ParameterMode.IN),
+                StoredProcedureParameter( name = "executor", type = String::class, mode = ParameterMode.IN),
+                StoredProcedureParameter( name = "comment", type = String::class, mode = ParameterMode.IN)
+            ]
+    )
+)
+data class RepoChanging(
         @Id
         @GeneratedValue
         val id: Int,
 
         // 1 = in-stock, 入库; -1 = out-stock, 出库; 0 = inventory
         val type: Int = 0,
+        val status: Int = 0,
 
         val applicant: String? = null,
         val applyingDate: Date = Date(),
@@ -596,23 +651,26 @@ data class StockChanging (
 
         val keeper: String? = null,
         val executeDate: Date? = null,
-        val comment: String? = null
+        val comment: String? = null,
+
+        @OneToMany(mappedBy = "repoChanging")
+        val items: List<RepoChangingItem> = LinkedList()
 )
 
 
 @Entity
-data class StockChangingItem (
+data class RepoChangingItem(
         @EmbeddedId
-        val id: StockChangingItemKey,
+        val id: RepoChangingItemKey,
 
-        @MapsId(value = "stockChanging")
+        @MapsId(value = "repoChanging")
         @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_changing_item_stock_changing"))
-        val stockChanging: StockChanging,
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_changing_item_repo_changing"))
+        val repoChanging: RepoChanging,
 
         @MapsId(value = "material")
         @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_stock_changing_material"))
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_changing_material"))
         val material: Material,
 
         val quantity: Float = 0f,
@@ -620,7 +678,54 @@ data class StockChangingItem (
 ) : Serializable
 
 @Embeddable
-data class StockChangingItemKey(
-        val stockChanging: Int = 0,
+data class RepoChangingItemKey(
+        val repoChanging: Int = 0,
         val material: Long = 0
 ) : Serializable
+
+
+//@SqlResultSetMapping(name = "stockInPreview",
+//        classes = [ConstructorResult(targetClass = StockInPreview::class,
+//                columns = [
+//                    ColumnResult(name = "material_id", type = Long::class),
+//                    ColumnResult(name = "current_quantity", type = Float::class),
+//                    ColumnResult(name = "current_price", type = Float::class),
+//                    ColumnResult(name = "in_quantity", type = Float::class),
+//                    ColumnResult(name = "in_price", type = Float::class),
+//                    ColumnResult(name = "new_quantity", type = Float::class),
+//                    ColumnResult(name = "new_price", type = Float::class)
+//                ])])
+data class StockInPreview(
+        val id: Int,
+
+        val currentQuantity: Float = 0f,
+        val currentPrice: Float = 0f,
+
+        val inQuantity: Float = 0f,
+        val inPrice: Float = 0f,
+
+        val newQuantity: Float = 0f,
+        val newPrice: Float = 0f
+)
+
+//@SqlResultSetMapping(name = "stockOutPreview",
+//        classes = [ConstructorResult(targetClass = StockOutPreview::class,
+//                columns = [
+//                    ColumnResult(name = "material_id", type = Long::class),
+//                    ColumnResult(name = "quantity", type = Float::class),
+//                    ColumnResult(name = "require_quantity", type = Float::class),
+//                    ColumnResult(name = "fulfilled", type = Boolean::class)
+//                ])])
+data class StockOutPreview(
+//        @Id
+        val id: Int,
+
+//        @MapsId
+//        @OneToOne
+//        val material: Material? = null,
+
+        val quantity: Float = 0f,
+        val price: Float = 0f,
+
+        val fulfilled: Boolean = false
+)

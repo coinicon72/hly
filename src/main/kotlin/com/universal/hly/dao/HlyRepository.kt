@@ -110,8 +110,8 @@ interface BomItemRepository : MyBaseRepository<BomItem, BomItemKey> {
 
 
 // POST:   {"id": 5, "material": {"id": 5}, "quantity": 1.3, "price": 4.4}
-// DELETE: stocks/5
-interface StockRepository : MyBaseRepository<Stock, Long> {
+// DELETE: repos/5
+interface RepoRepository : MyBaseRepository<Repo, Long> {
 }
 
 // POST: {"comment": "test again"}
@@ -119,19 +119,34 @@ interface InventoryRepository : MyBaseRepository<Inventory, Int> {
 }
 
 // POST {"id": {"inventory": 0, "material": 0}, "inventory": {"id":2}, "material": {"id":5}, "quantity": 1.3, "price": 4.4}
-interface StockHistoryRepository : MyBaseRepository<StockHistory, Int> {
+interface RepoHistoryRepository : MyBaseRepository<RepoHistory, Int> {
 }
 
 // POST {"type": 2, "applicant": "whoelse", "keeper": "kevin", "amount": 4.4}
-interface StockChangingRepository : MyBaseRepository<StockChanging, Int> {
-    // @Query("select * from stock_changing b where b.order_id = ?1", nativeQuery = true)
-    fun findByType(@Param("type") type: Int): List<StockChanging>
+interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
+    // @Query("select * from repo_changing b where b.order_id = ?1", nativeQuery = true)
+    fun findByType(@Param("type") type: Int): List<RepoChanging>
+
+    fun findByTypeAndStatus(@Param("type") type: Int, @Param("status") status: Int): List<RepoChanging>
+
+    fun findByStatus(@Param("status") status: Int): List<RepoChanging>
+
+    @Query(nativeQuery = true, name = "RepoChanging.previewStockOut")
+    fun previewStockIn(@Param("cid") cid: Int): List<StockInPreview>
+
+    @Query(nativeQuery = true, name = "RepoChanging.previewStockOut")
+    fun previewStockOut(@Param("cid") cid: Int): List<StockOutPreview>
 }
 
-// POST {"id": {"stockChanging": 0, "material": 0}, "stockChanging": {"id":1}, "material": {"id":6}, "quantity": -1.3, "price": 4.4}
-interface StockChangingItemRepository : MyBaseRepository<StockChangingItem, Int> {
+// POST {"id": {"repoChanging": 0, "material": 0}, "repoChanging": {"id":1}, "material": {"id":6}, "quantity": -1.3, "price": 4.4}
+interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, Int> {
 }
 
+
+//interface StockOutPreviewRepository : MyBaseRepository<StockOutPreview, Int> {
+//    @Query(nativeQuery = true, name = "RepoChanging.previewStockOut")
+//    fun previewStockOut(@Param("cid") cid: Int): List<StockOutPreview>
+//}
 
 // ==============================================================
 @Component
@@ -189,37 +204,37 @@ class BomItemKeyConverter : BackendIdConverter {
 }
 
 @Component
-class StockHistoryKeyConverter : BackendIdConverter {
+class RepoHistoryKeyConverter : BackendIdConverter {
 
     override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
         val parts = id.split("_")
-        return StockHistoryKey(parts[0].toInt(), parts[1].toLong())
+        return RepoHistoryKey(parts[0].toInt(), parts[1].toLong())
     }
 
     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
-        val id: StockHistoryKey = source as StockHistoryKey
+        val id: RepoHistoryKey = source as RepoHistoryKey
         return String.format("%s_%s", id.inventory, id.material)
     }
 
     override fun supports(type: Class<*>): Boolean {
-        return StockHistory::class.java == type
+        return RepoHistory::class.java == type
     }
 }
 
 // @Component
-// class StockChangingItemKeyConverter : BackendIdConverter {
+// class RepoChangingItemKeyConverter : BackendIdConverter {
 // 
 //     override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
 //         val parts = id.split("_")
-//         return StockChangingItemKey(parts[0].toInt(), parts[1].toLong())
+//         return RepoChangingItemKey(parts[0].toInt(), parts[1].toLong())
 //     }
 // 
 //     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
-//         val id: StockChangingItemKey = source as StockChangingItemKey
-//         return String.format("%s_%s", id.stockChanging, id.material)
+//         val id: RepoChangingItemKey = source as RepoChangingItemKey
+//         return String.format("%s_%s", id.repoChanging, id.material)
 //     }
 // 
 //     override fun supports(type: Class<*>): Boolean {
-//         return StockChangingItem::class.java == type
+//         return RepoChangingItem::class.java == type
 //     }
 // }

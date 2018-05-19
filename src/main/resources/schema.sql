@@ -148,8 +148,8 @@
 
 --CREATE TABLE `repo` (
 --  `material_id` bigint(20) NOT NULL,
---  `quantity` float NOT NULL,
---  `price` float NOT NULL,
+--  `quantity` float UNSIGNED NOT NULL,
+--  `price` float UNSIGNED NOT NULL,
 --  PRIMARY KEY (`material_id`),
 --  CONSTRAINT `fk_stock_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
 --) COMMENT='库存';
@@ -175,7 +175,8 @@
 --  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
 --  `type` tinyint(4) NOT NULL default 0 COMMENT '1 = in-stock, 入库\n-1 = out-stock, 出库\n0 = inventory, 盘点',
 --  `status` tinyint(4) NOT NULL default 0 COMMENT '0 = init; 1 = submitted; 2 = executed; -1 = rejected',
---  `apply_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--  `create_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--  `apply_date` timestamp NULL,
 --  `applicant` varchar(30) NOT NULL,
 --  `application` varchar(200) null default null,
 --  `department` varchar(50) null DEFAULT NULL,
@@ -189,12 +190,150 @@
 --CREATE TABLE `stock_changing_item` (
 --  `stock_changing_id` int(10) unsigned NOT NULL,
 --  `material_id` bigint(20) NOT NULL,
---  `quantity` float NOT NULL,
---  `price` float NOT NULL,
+--  `quantity` float unsigned NOT NULL,
+--  `price` float UNSIGNED NOT NULL,
 --  PRIMARY KEY (`stock_changing_id`, `material_id`),
 --  CONSTRAINT `fk_stock_changing_item_stock_changing` FOREIGN KEY (`stock_changing_id`) REFERENCES `stock_changing` (`id`),
 --  CONSTRAINT `fk_stock_changing_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
 --) COMMENT='库存变化条目';
+
+
+
+--DELIMITER $$
+--CREATE PROCEDURE `preview_stock_in_changing`(id int)
+--BEGIN
+--
+--select *,
+--	current_quantity * current_price as ct,
+--	round(in_quantity * in_price, 2) as nt,
+--	round(current_quantity + in_quantity, 3) as new_quantity,
+--	round((current_quantity * current_price + in_quantity * in_price) / (current_quantity + in_quantity), 2) as new_price
+--from (
+--select ci.material_id,
+--ifnull(repo.quantity, 0) current_quantity, ifnull(repo.price, 0) current_price,
+--ci.quantity in_quantity, ci.price in_price
+--from repo_changing_item ci
+--	join repo_changing c on ci.repo_changing_id = c.id
+--    left join repo on repo.material_id = ci.material_id
+--where c.type=1 and c.status=1 and ci.repo_changing_id = id
+--) tmp;
+--
+--END$$
+--DELIMITER ;
+
+
+--DELIMITER $$
+--CREATE PROCEDURE `preview_stock_out_changing`(cid int)
+--BEGIN
+--
+--select ci.material_id,
+--	ifnull(repo.quantity, 0) quantity,
+--	ci.quantity require_quantity,
+--    ifnull(repo.quantity >= ci.quantity, 0) fulfilled
+--from repo_changing_item ci
+--	join repo_changing c on ci.repo_changing_id = c.id
+--	left join repo on repo.material_id = ci.material_id
+--where c.type=-1 and c.status=1
+--and ci.repo_changing_id = cid
+--;
+--
+--END$$
+--DELIMITER ;
+
+
+-- DELIMITER $$
+-- CREATE PROCEDURE `apply_stock_in_changing`(cid int, executor varchar(30), cmt varchar(200))
+-- BEGIN
+
+--     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+--         BEGIN
+--             ROLLBACK;
+--            resignal;
+--         END;
+
+--     START TRANSACTION;
+
+--         insert into repo (material_id, quantity, price) 
+--         select * from (
+--             select ci.material_id mid, 
+--             ci.quantity nq, ci.price np 
+--             from repo_changing_item ci join repo_changing c on ci.repo_changing_id = c.id where c.type = 1 and c.status=1 and ci.repo_changing_id = cid) si
+--         ON DUPLICATE KEY UPDATE price = round((np * nq + repo.quantity * price) / (repo.quantity + nq), 2), quantity = round(repo.quantity + nq, 3)
+--         ;
+
+--         update repo_changing set status=2, execute_date=now(), keeper=executor, comment=cmt where id=cid;
+
+--     COMMIT;
+
+-- END$$
+-- DELIMITER ;
+
+
+--DELIMITER $$
+--CREATE DEFINER=`root`@`localhost` PROCEDURE `apply_stock_out_changing`(cid int, executor varchar(30), cmt varchar(200))
+--BEGIN
+--	declare res, count, err int default 0;
+--	DECLARE done int DEFAULT FALSE;
+--
+--	declare c cursor for select fulfilled, count(*) from (
+--select ci.material_id,
+--	ifnull(repo.quantity, 0) quantity,
+--	ci.quantity require_quantity,
+--    ifnull(repo.quantity >= ci.quantity, 0) fulfilled
+--from repo_changing_item ci
+--	join repo_changing c on ci.repo_changing_id = c.id
+--	left join repo on repo.material_id = ci.material_id
+--where c.type=-1 and c.status=1
+--and ci.repo_changing_id = 10
+--) t group by fulfilled -- where fulfilled is false
+--;
+--
+--	DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+--
+--    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+--        BEGIN
+--            ROLLBACK;
+--            resignal;
+--        END;
+--
+--	open c;
+--  read_loop: LOOP
+--    FETCH c INTO res, count;
+--
+--    IF done THEN
+--      LEAVE read_loop;
+--    END IF;
+--
+--    if res = 1 and count = 0 then
+--		set err = 1;
+--        LEAVE read_loop;
+--	elseif res = 0 and count > 0 then
+--		set err = 2;
+--        LEAVE read_loop;
+--	end if;
+--
+--  END LOOP;
+--
+--  CLOSE c;
+--
+--  if err = 1 then
+--		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'invalid changing id';
+--  elseif err = 2 then
+--		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'cannot fulfill all item(s)';
+--	end if;
+--
+--    -- do it
+--    START TRANSACTION;
+--
+--	update repo r, repo_changing c, repo_changing_item ci
+--	set r.quantity = r.quantity - ci.quantity, ci.price = r.price, c.execute_date = now(), c.status = 2, c.keeper = executor, c.comment = cmt
+--	where ci.repo_changing_id = c.id and ci.material_id = r.material_id and c.type=-1 and c.status=1 and c.id = cid;
+--
+--    COMMIT;
+--
+--END$$
+--DELIMITER ;
+
 
 
 select 1;

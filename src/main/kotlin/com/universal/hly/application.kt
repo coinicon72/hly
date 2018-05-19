@@ -12,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.DependsOn
 import org.springframework.web.bind.annotation.ControllerAdvice
+import javax.persistence.EntityManager
 
 
 /**
@@ -80,11 +81,12 @@ class Application {
 //    }
 
 //    @Bean
-//    fun aopChecker(greetingController: GreetingController) : CommandLineRunner {
+//    fun aopChecker(entityManager: EntityManager) : CommandLineRunner {
 //        return CommandLineRunner {
-//            log.info("AopUtils.isAopProxy: {}", AopUtils.isAopProxy(greetingController))
-//            log.info("AopUtils.isJdkDynamicProxy: {}", AopUtils.isJdkDynamicProxy(greetingController))
-//            log.info("AopUtils.isCglibProxy: {}", AopUtils.isCglibProxy(greetingController))
+//            val r = entityManager.createNativeQuery("call preview_stock_out_changing(:cid)", "StockOutPreview")
+//                    .setParameter("cid", 5)
+//                    .resultList
+//            println(r)
 //        }
 //    }
 
