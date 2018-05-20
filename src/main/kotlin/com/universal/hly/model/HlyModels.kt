@@ -537,8 +537,8 @@ data class Repo(
         @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_material"))
         val material: Material? = null,
 
-        val quantity: Float = 0f,
-        val price: Float = 0f
+        var quantity: Float? = null,
+        var price: Float? = null
 )
 
 @Entity
@@ -724,8 +724,8 @@ data class StockOutPreview(
 //        @OneToOne
 //        val material: Material? = null,
 
-        val quantity: Float = 0f,
-        val price: Float = 0f,
+        val repoQuantity: Float = 0f,
+        val requireQuantity: Float = 0f,
 
         val fulfilled: Boolean = false
 )

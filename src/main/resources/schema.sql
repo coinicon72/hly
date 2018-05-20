@@ -284,7 +284,7 @@
 --	join repo_changing c on ci.repo_changing_id = c.id
 --	left join repo on repo.material_id = ci.material_id
 --where c.type=-1 and c.status=1
---and ci.repo_changing_id = 10
+--and ci.repo_changing_id = cid
 --) t group by fulfilled -- where fulfilled is false
 --;
 --

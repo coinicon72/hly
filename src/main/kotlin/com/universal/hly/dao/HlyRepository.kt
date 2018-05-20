@@ -131,6 +131,10 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
 
     fun findByStatus(@Param("status") status: Int): List<RepoChanging>
 
+//    fun findByStatusAndTypeIn(@Param("type") type: List<Int>, @Param("status") status: Int): List<RepoChanging>
+    @Query("select * from repo_changing where type <> 0 and status=?1", nativeQuery = true)
+    fun findStockInOutByStatus(@Param("status") status: Int): List<RepoChanging>
+
     @Query(nativeQuery = true, name = "RepoChanging.previewStockOut")
     fun previewStockIn(@Param("cid") cid: Int): List<StockInPreview>
 
