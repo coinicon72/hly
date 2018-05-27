@@ -109,9 +109,14 @@ interface BomItemRepository : MyBaseRepository<BomItem, BomItemKey> {
 }
 
 
+interface RepoRepository : MyBaseRepository<Repo, Int> {
+    fun findByType(@Param("type") type: Int): List<Repo>
+}
+
+
 // POST:   {"id": 5, "material": {"id": 5}, "quantity": 1.3, "price": 4.4}
 // DELETE: repos/5
-interface RepoRepository : MyBaseRepository<Repo, Long> {
+interface RepoItemRepository : MyBaseRepository<RepoItem, Long> {
 }
 
 // POST: {"comment": "test again"}
@@ -120,6 +125,10 @@ interface InventoryRepository : MyBaseRepository<Inventory, Int> {
 
 // POST {"id": {"inventory": 0, "material": 0}, "inventory": {"id":2}, "material": {"id":5}, "quantity": 1.3, "price": 4.4}
 interface RepoHistoryRepository : MyBaseRepository<RepoHistory, Int> {
+}
+
+interface RepoChangingReasonRepository : MyBaseRepository<RepoChangingReason, Int> {
+    fun findByType(@Param("type") type: Int): List<RepoChangingReason>
 }
 
 // POST {"type": 2, "applicant": "whoelse", "keeper": "kevin", "amount": 4.4}
@@ -156,7 +165,9 @@ interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, Int> {
 @Component
 class FormulaItemKeyConverter : BackendIdConverter {
 
-    override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
+
         val parts = id.split("_")
         return FormulaItemKey(parts[0].toLong(), parts[1].toLong())
     }
@@ -174,7 +185,9 @@ class FormulaItemKeyConverter : BackendIdConverter {
 @Component
 class OrderItemKeyConverter : BackendIdConverter {
 
-    override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
+
         val parts = id.split("_")
         return OrderItemKey(parts[0].toLong(), parts[1].toLong())
     }
@@ -192,7 +205,9 @@ class OrderItemKeyConverter : BackendIdConverter {
 @Component
 class BomItemKeyConverter : BackendIdConverter {
 
-    override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
+
         val parts = id.split("_")
         return BomItemKey(parts[0].toLong(), parts[1].toLong())
     }
@@ -210,7 +225,9 @@ class BomItemKeyConverter : BackendIdConverter {
 @Component
 class RepoHistoryKeyConverter : BackendIdConverter {
 
-    override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
+
         val parts = id.split("_")
         return RepoHistoryKey(parts[0].toInt(), parts[1].toLong())
     }
@@ -225,20 +242,22 @@ class RepoHistoryKeyConverter : BackendIdConverter {
     }
 }
 
-// @Component
-// class RepoChangingItemKeyConverter : BackendIdConverter {
-// 
-//     override fun fromRequestId(id: String, entityType: Class<*>): Serializable {
-//         val parts = id.split("_")
-//         return RepoChangingItemKey(parts[0].toInt(), parts[1].toLong())
-//     }
-// 
-//     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
-//         val id: RepoChangingItemKey = source as RepoChangingItemKey
-//         return String.format("%s_%s", id.repoChanging, id.material)
-//     }
-// 
-//     override fun supports(type: Class<*>): Boolean {
-//         return RepoChangingItem::class.java == type
-//     }
-// }
+ @Component
+ class RepoChangingItemKeyConverter : BackendIdConverter {
+
+     override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+         if (id == null) return null
+
+         val parts = id.split("_")
+         return RepoChangingItemKey(parts[0].toInt(), parts[1].toLong())
+     }
+
+     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+         val id: RepoChangingItemKey = source as RepoChangingItemKey
+         return String.format("%s_%s", id.repoChanging, id.material)
+     }
+
+     override fun supports(type: Class<*>): Boolean {
+         return RepoChangingItem::class.java == type
+     }
+ }

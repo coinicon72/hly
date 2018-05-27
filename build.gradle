@@ -18,8 +18,8 @@ compileTestKotlin {
 
 buildscript {
     ext.kotlin_version = '1.2.41'
-    ext.spring_boot_version = '1.5.11.RELEASE'
-//    ext.spring_boot_version = '2.0.0.RELEASE'
+//    ext.spring_boot_version = '1.5.11.RELEASE'
+    ext.spring_boot_version = '2.0.2.RELEASE'
 
     repositories {
         jcenter()
@@ -51,7 +51,8 @@ dependencies {
 
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.5"
 
-    runtime 'mysql:mysql-connector-java:6.0.4'
+//    runtime 'mysql:mysql-connector-java:6.0.4'
+    runtime 'mysql:mysql-connector-java:8.0.11'
     runtime "org.springframework.boot:spring-boot-devtools:$spring_boot_version"
 
     compile 'org.apache.shiro:shiro-spring-boot-web-starter:1.4.0'

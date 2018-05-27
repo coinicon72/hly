@@ -147,11 +147,23 @@
 
 
 --CREATE TABLE `repo` (
+--  `id` int(11) NOT NULL AUTO_INCREMENT,
+--  `name` varchar(50) NOT NULL,
+--  `type` tinyint(4) NOT NULL COMMENT '0 = material, 1=product',
+--  `comment` varchar(200) DEFAULT NULL,
+--  PRIMARY KEY (`id`),
+--  UNIQUE KEY `name` (`name`)
+--) COMMENT='仓库';
+
+
+--CREATE TABLE `repo_item` (
+--  `repo_id` int NOT NULL,
 --  `material_id` bigint(20) NOT NULL,
 --  `quantity` float UNSIGNED NOT NULL,
 --  `price` float UNSIGNED NOT NULL,
---  PRIMARY KEY (`material_id`),
---  CONSTRAINT `fk_stock_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
+--  PRIMARY KEY (`repo_id`, `material_id`),
+--  CONSTRAINT `fk_repo_item_repo` FOREIGN KEY (`repo_id`) REFERENCES `repo` (`id`)
+--  CONSTRAINT `fk_repo_item_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
 --) COMMENT='库存';
 --
 --CREATE TABLE `inventory` (
@@ -167,34 +179,42 @@
 --  `quantity` float NOT NULL,
 --  `price` float NOT NULL,
 --  PRIMARY KEY (`inventory_id`,`material_id`),
---  CONSTRAINT `fk_stock_history_inventory` FOREIGN KEY (`inventory_id`) REFERENCES `inventory` (`id`),
---  CONSTRAINT `fk_stock_history_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
+--  CONSTRAINT `fk_repo_history_inventory` FOREIGN KEY (`inventory_id`) REFERENCES `inventory` (`id`),
+--  CONSTRAINT `fk_repo_history_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
 --) COMMENT='库存历史';
 --
 --CREATE TABLE `repo_changing` (
 --  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
---  `type` tinyint(4) NOT NULL default 0 COMMENT '1 = in-stock, 入库\n-1 = out-stock, 出库\n0 = inventory, 盘点',
+--  `repo_id` INT NOT NULL,
+--  `type` tinyint(4) NOT NULL default 0 COMMENT '1 = stock-in, 入库\n-1 = stock-out, 出库\n0 = inventory, 盘点',
 --  `status` tinyint(4) NOT NULL default 0 COMMENT '0 = init; 1 = submitted; 2 = executed; -1 = rejected',
 --  `create_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
---  `apply_date` timestamp NULL,
+--  `applying_date` timestamp NULL,
 --  `applicant` varchar(30) NOT NULL,
---  `application` varchar(200) null default null,
+--  `reason_id` INT NULL COMMENT 'null = custom reason',
+--  `reason_detail` VARCHAR(200) NULL DEFAULT NULL ,
 --  `department` varchar(50) null DEFAULT NULL,
---  `amount` float NULL,
+--  `vat` FLOAT UNSIGNED NULL DEFAULT 0 COMMENT '增值税税率，0即意味着不含税, 0.03 = 3%',
+--  `vat_ inclusive_value` FLOAT UNSIGNED NULL COMMENT '含增值税的金额',
+--  `value` FLOAT UNSIGNED NULL DEFAULT NULL COMMENT '不含增值税的总额。value = value_with_vat / 1 + vat' ,
 --  `keeper` varchar(30) NULL,
 --  `execute_date` timestamp null,
 --  `comment` varchar(200) default null,
---  PRIMARY KEY (`id`)
+--  PRIMARY KEY (`id`),
+--  CONSTRAINT `fk_repo_changing_repo` FOREIGN KEY (`repo_id`) REFERENCES `repo` (`id`),
+--  CONSTRAINT `fk_repo_changing_order` FOREIGN KEY (`order_id`) REFERENCES `order` (`id`),
+--  CONSTRAINT `fk_repo_changing_reason` FOREIGN KEY (`reason_id`) REFERENCES `hly`.`repo_changing_reason` (`id`) ON DELETE SET NULL
 --) COMMENT='库存变化';
 --
---CREATE TABLE `stock_changing_item` (
---  `stock_changing_id` int(10) unsigned NOT NULL,
+--CREATE TABLE `repo_changing_item` (
+--  `repo_changing_id` int(10) unsigned NOT NULL,
 --  `material_id` bigint(20) NOT NULL,
 --  `quantity` float unsigned NOT NULL,
---  `price` float UNSIGNED NOT NULL,
---  PRIMARY KEY (`stock_changing_id`, `material_id`),
---  CONSTRAINT `fk_stock_changing_item_stock_changing` FOREIGN KEY (`stock_changing_id`) REFERENCES `stock_changing` (`id`),
---  CONSTRAINT `fk_stock_changing_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
+--  `price` float UNSIGNED NOT NULL COMMENT 'vat excluded price. price = vat_inclusive_price / (1 + repo_changing.vat)' ,
+--  `vat_inclusive_price` FLOAT UNSIGNED NOT NULL,
+--  PRIMARY KEY (`repo_changing_id`, `material_id`),
+--  CONSTRAINT `fk_repo_changing_item_repo_changing` FOREIGN KEY (`repo_changing_id`) REFERENCES `repo_changing` (`id`),
+--  CONSTRAINT `fk_repo_changing_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
 --) COMMENT='库存变化条目';
 
 
@@ -331,6 +351,34 @@
 --
 --    COMMIT;
 --
+--END$$
+--DELIMITER ;
+
+
+--CREATE TABLE `repo_changing_reason` (
+--  `id` int(11) NOT NULL AUTO_INCREMENT,
+--  `type` tinyint(4) NOT NULL COMMENT '1 = stock-in; -1 = stock-out',
+--  `reason` varchar(50) NOT NULL,
+--  `order_related` tinyint(4) NOT NULL DEFAULT 0,
+--  PRIMARY KEY (`id`)
+--);
+
+
+--DROP TRIGGER IF EXISTS `repo_changing_BEFORE_INSERT`;
+--
+--DELIMITER $$
+--CREATE TRIGGER `repo_changing_BEFORE_INSERT` BEFORE INSERT ON `repo_changing` FOR EACH ROW
+--BEGIN
+--	set new.value = new.vat_inclusive_value / (1 + new.vat);
+--END$$
+--DELIMITER ;
+--
+--DROP TRIGGER IF EXISTS `repo_changing_BEFORE_UPDATE`;
+--
+--DELIMITER $$
+--CREATE TRIGGER `repo_changing_BEFORE_UPDATE` BEFORE UPDATE ON `repo_changing` FOR EACH ROW
+--BEGIN
+--	set new.value = new.vat_inclusive_value / (1 + new.vat);
 --END$$
 --DELIMITER ;
 

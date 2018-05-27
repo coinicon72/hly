@@ -20,7 +20,7 @@ import javax.persistence.*
 @Entity
 data class ClientType(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long? = null,
 
         @Column(nullable = false, length = 50)
@@ -32,7 +32,7 @@ data class ClientType(
 //@Table(uniqueConstraints = [UniqueConstraint(name = "uniq_Client_contract_no", columnNames = ["contractNo"])])
 data class Client(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long? = null,
 
         @Column(nullable = false, length = 50)
@@ -108,7 +108,7 @@ interface InlineClientType {
         uniqueConstraints = [(UniqueConstraint(name = "uk_order_no", columnNames = ["no"]))])
 data class Order(
         @Id
-        @GeneratedValue//(strategy = GenerationType.IDENTITY)
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long? = null,
 
 //        @NaturalId
@@ -157,7 +157,7 @@ data class Order(
 //@IdClass(OrderItemKey::class)
 data class OrderItem(
         @EmbeddedId
-//        @GeneratedValue//(strategy = GenerationType.IDENTITY)
+//        @GeneratedValue(strategy = GenerationType.IDENTITY)
 //        val id: Long? = null,
         val id: OrderItemKey,
 
@@ -206,7 +206,7 @@ data class OrderItemKey(
 @Table(uniqueConstraints = [(UniqueConstraint(name = "uk_product_code", columnNames = ["code"]))])
 data class Product(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long? = null,
 
 //        @NaturalId
@@ -258,11 +258,11 @@ data class Product(
 @Table(uniqueConstraints = [UniqueConstraint(name = "uniq_formula_revision", columnNames = ["product_id", "revision"])])
 data class Formula(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long,
 
 //        @Id
-//        @GeneratedValue(strategy = GenerationType.SEQUENCE)
+//        @GeneratedValue(strategy = GenerationType.IDENTITY)(strategy = GenerationType.SEQUENCE)
         val revision: Int = 0,
 
 //        @MapsId
@@ -413,7 +413,7 @@ interface InlineMaterial {
 @Entity
 data class Material(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long? = null,
 
         @NaturalId
@@ -456,7 +456,7 @@ interface InlineMaterialType {
 @Entity
 data class MaterialType(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long? = null,
 
         @Column(nullable = false, length = 50)
@@ -467,7 +467,7 @@ data class MaterialType(
 @Entity
 data class Bom(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long = 0,
 
 //       @Id
@@ -530,21 +530,47 @@ data class BomItemKey(
 @Entity
 data class Repo(
         @Id
-        val id: Long,
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Int,
 
-        @MapsId
-        @OneToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_material"))
+        val name: String? = null,
+
+        val type: Int = 0,
+
+        val comment: String? = null
+)
+
+@Entity
+data class RepoItem(
+        @EmbeddedId
+        val id: RepoItemKey,
+
+        @MapsId(value = "repo")
+        @ManyToOne
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_item_repo"))
+        val repo: Repo? = null,
+
+        @MapsId(value = "material")
+        @ManyToOne
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_item_material"))
         val material: Material? = null,
 
         var quantity: Float? = null,
+
         var price: Float? = null
 )
+
+@Embeddable
+data class RepoItemKey(
+        val repo: Int = 0,
+        val material: Long = 0
+) : Serializable
+
 
 @Entity
 data class Inventory(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Int,
 
         val date: Date = Date(),
@@ -577,6 +603,20 @@ data class RepoHistoryKey(
         val inventory: Int = 0,
         val material: Long = 0
 ) : Serializable
+
+
+@Entity
+data class RepoChangingReason (
+       @Id
+       @GeneratedValue(strategy = GenerationType.IDENTITY)
+       val id: Int,
+
+       val type: Int? = null,
+
+       val reason: String? = null,
+
+       val orderRelated: Boolean = false
+)
 
 
 @Entity
@@ -636,18 +676,41 @@ data class RepoHistoryKey(
 )
 data class RepoChanging(
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Int,
 
-        // 1 = in-stock, 入库; -1 = out-stock, 出库; 0 = inventory
+        @ManyToOne(fetch = FetchType.EAGER)
+        val repo: Repo? = null,
+
+        /**
+         *  1 = in-stock, 入库; -1 = out-stock, 出库; 0 = inventory
+         */
         val type: Int = 0,
+
+        /**
+         * 0 = init; 1 = submitted; 2 = executed; -1 = rejected
+         */
         val status: Int = 0,
 
+        val createDate: Date = Date(),
+
         val applicant: String? = null,
-        val applyingDate: Date = Date(),
-        val application: String? = null,
+        val applyingDate: Date? = null,
+
+        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+        val reason: RepoChangingReason? = null,
+
+//        @Column(name = "reason")
+        val reasonDetail: String? = null,
+
+        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+        val order: Order? = null,
+
         val department: String? = null,
-        val amount: Float = 0f,
+
+        val vat: Float = 0f,
+        val vatInclusiveValue: Float = 0f,
+        val value: Float = 0f,
 
         val keeper: String? = null,
         val executeDate: Date? = null,
@@ -674,6 +737,8 @@ data class RepoChangingItem(
         val material: Material,
 
         val quantity: Float = 0f,
+
+        val vatInclusivePrice: Float = 0f,
         val price: Float = 0f
 ) : Serializable
 
