@@ -1,5 +1,7 @@
 package com.universal.hly.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import org.hibernate.annotations.NaturalId
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
@@ -7,6 +9,7 @@ import org.springframework.data.rest.core.config.Projection
 import java.io.Serializable
 import java.util.*
 import javax.persistence.*
+import kotlin.collections.ArrayList
 
 /**
  * Created by swm on 2018-4-5
@@ -606,16 +609,16 @@ data class RepoHistoryKey(
 
 
 @Entity
-data class RepoChangingReason (
-       @Id
-       @GeneratedValue(strategy = GenerationType.IDENTITY)
-       val id: Int,
+data class RepoChangingReason(
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Int,
 
-       val type: Int? = null,
+        val type: Int? = null,
 
-       val reason: String? = null,
+        val reason: String? = null,
 
-       val orderRelated: Boolean = false
+        val orderRelated: Boolean = false
 )
 
 
@@ -653,26 +656,26 @@ data class RepoChangingReason (
                         ])])
 )
 @NamedStoredProcedureQueries(
-    NamedStoredProcedureQuery(
-            name = "applyStockInChanging",
-            procedureName = "apply_stock_in_changing",
+        NamedStoredProcedureQuery(
+                name = "applyStockInChanging",
+                procedureName = "apply_stock_in_changing",
 //            resultClasses = { Car.class },
-            parameters = [
-                StoredProcedureParameter( name = "cid", type = Integer::class, mode = ParameterMode.IN),
-                StoredProcedureParameter( name = "executor", type = String::class, mode = ParameterMode.IN),
-                StoredProcedureParameter( name = "comment", type = String::class, mode = ParameterMode.IN)
-            ]
-    ),
-    NamedStoredProcedureQuery(
-            name = "applyStockOutChanging",
-            procedureName = "apply_stock_out_changing",
+                parameters = [
+                    StoredProcedureParameter(name = "cid", type = Integer::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "executor", type = String::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "comment", type = String::class, mode = ParameterMode.IN)
+                ]
+        ),
+        NamedStoredProcedureQuery(
+                name = "applyStockOutChanging",
+                procedureName = "apply_stock_out_changing",
 //            resultClasses = { Car.class },
-            parameters = [
-                StoredProcedureParameter( name = "cid", type = Integer::class, mode = ParameterMode.IN),
-                StoredProcedureParameter( name = "executor", type = String::class, mode = ParameterMode.IN),
-                StoredProcedureParameter( name = "comment", type = String::class, mode = ParameterMode.IN)
-            ]
-    )
+                parameters = [
+                    StoredProcedureParameter(name = "cid", type = Integer::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "executor", type = String::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "comment", type = String::class, mode = ParameterMode.IN)
+                ]
+        )
 )
 data class RepoChanging(
         @Id
@@ -793,4 +796,117 @@ data class StockOutPreview(
         val requireQuantity: Float = 0f,
 
         val fulfilled: Boolean = false
+)
+
+
+@Entity
+data class Organization(
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Int,
+
+        @ManyToOne
+        @JoinColumn(name = "parent")
+        val parent: Organization? = null,
+
+        val hs: String? = null,
+
+        val type: Int = 0,
+
+        val info: String? = null
+)
+
+
+@Entity
+//@NamedNativeQueries(
+//        NamedNativeQuery(name = "User.findAll",
+//                query = "select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+//            "info->>'\$.title' title, info->>'\$.pwd' password " +
+//            "from organization o where o.type = 1",
+//                resultClass = User::class,
+//                resultSetMapping = "UserMapping"
+//        ),
+//        NamedNativeQuery(name = "User.findById",
+//                query = "select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+//            "info->>'\$.title' title, info->>'\$.pwd' password " +
+//            "from organization o where o.type = 1 and id=:id",
+//                resultClass = User::class,
+//                resultSetMapping = "UserMapping"
+//        ),
+//        NamedNativeQuery(name = "User.findByPhone",
+//                query = "select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+//            "info->>'\$.title' title, info->>'\$.pwd' password " +
+//            "from organization o where o.type = 1 and phone=:phone",
+//                resultClass = User::class,
+//                resultSetMapping = "UserMapping"
+//        )
+//)
+//
+//@SqlResultSetMappings(SqlResultSetMapping(name = "UserMapping",
+//        classes = [ConstructorResult(targetClass = User::class,
+//                columns = [
+//                    ColumnResult(name = "id", type = Int::class),
+//                    ColumnResult(name = "name", type = String::class),
+//                    ColumnResult(name = "phone", type = String::class),
+//                    ColumnResult(name = "title", type = String::class),
+//                    ColumnResult(name = "password", type = String::class)
+//                ])])
+//)
+
+data class User(
+        @Id
+        val id: Int,
+
+        val name: String? = null,
+
+        val phone: String? = null,
+
+//        val title: String? = null,
+
+        @JsonIgnore
+        val password: String? = null,
+
+        val disabled: Boolean = false,
+
+        @ManyToMany
+        @JoinTable(name = "user_role",
+                joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
+                inverseJoinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")]
+        )
+        val roles: List<Role> = ArrayList()
+)
+
+
+@Entity
+data class Role(
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Int,
+
+        val code: String? = null,
+
+        val name: String? = null,
+
+        val comment: String? = null,
+
+        @ManyToMany
+        @JoinTable(name = "role_privilege",
+                joinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")],
+                inverseJoinColumns = [JoinColumn(name = "privilege_id", referencedColumnName = "id")]
+        )
+        val privileges: List<Privilege> = ArrayList()
+)
+
+
+@Entity
+data class Privilege(
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Int,
+
+        val code: String? = null,
+
+        val name: String? = null,
+
+        val comment: String? = null
 )

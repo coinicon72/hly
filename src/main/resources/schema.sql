@@ -203,7 +203,7 @@
 --  PRIMARY KEY (`id`),
 --  CONSTRAINT `fk_repo_changing_repo` FOREIGN KEY (`repo_id`) REFERENCES `repo` (`id`),
 --  CONSTRAINT `fk_repo_changing_order` FOREIGN KEY (`order_id`) REFERENCES `order` (`id`),
---  CONSTRAINT `fk_repo_changing_reason` FOREIGN KEY (`reason_id`) REFERENCES `hly`.`repo_changing_reason` (`id`) ON DELETE SET NULL
+--  CONSTRAINT `fk_repo_changing_reason` FOREIGN KEY (`reason_id`) REFERENCES `repo_changing_reason` (`id`) ON DELETE SET NULL
 --) COMMENT='库存变化';
 --
 --CREATE TABLE `repo_changing_item` (
@@ -230,11 +230,11 @@
 --	round((current_quantity * current_price + in_quantity * in_price) / (current_quantity + in_quantity), 2) as new_price
 --from (
 --select ci.material_id,
---ifnull(repo.quantity, 0) current_quantity, ifnull(repo.price, 0) current_price,
+--ifnull(repo.quantity, 0) current_quantity, ifnull(repo_item.price, 0) current_price,
 --ci.quantity in_quantity, ci.price in_price
 --from repo_changing_item ci
 --	join repo_changing c on ci.repo_changing_id = c.id
---    left join repo on repo.material_id = ci.material_id
+--    left join repo on repo_item.material_id = ci.material_id
 --where c.type=1 and c.status=1 and ci.repo_changing_id = id
 --) tmp;
 --
@@ -247,12 +247,12 @@
 --BEGIN
 --
 --select ci.material_id,
---	ifnull(repo.quantity, 0) quantity,
+--	ifnull(repo_item.quantity, 0) quantity,
 --	ci.quantity require_quantity,
---    ifnull(repo.quantity >= ci.quantity, 0) fulfilled
+--    ifnull(repo_item.quantity >= ci.quantity, 0) fulfilled
 --from repo_changing_item ci
 --	join repo_changing c on ci.repo_changing_id = c.id
---	left join repo on repo.material_id = ci.material_id
+--	left join repo on repo_item.material_id = ci.material_id
 --where c.type=-1 and c.status=1
 --and ci.repo_changing_id = cid
 --;
@@ -278,7 +278,7 @@
 --             select ci.material_id mid, 
 --             ci.quantity nq, ci.price np 
 --             from repo_changing_item ci join repo_changing c on ci.repo_changing_id = c.id where c.type = 1 and c.status=1 and ci.repo_changing_id = cid) si
---         ON DUPLICATE KEY UPDATE price = round((np * nq + repo.quantity * price) / (repo.quantity + nq), 2), quantity = round(repo.quantity + nq, 3)
+--         ON DUPLICATE KEY UPDATE price = round((np * nq + repo_item.quantity * price) / (repo_item.quantity + nq), 2), quantity = round(repo_item.quantity + nq, 3)
 --         ;
 
 --         update repo_changing set status=2, execute_date=now(), keeper=executor, comment=cmt where id=cid;
@@ -297,12 +297,12 @@
 --
 --	declare c cursor for select fulfilled, count(*) from (
 --select ci.material_id,
---	ifnull(repo.quantity, 0) quantity,
+--	ifnull(repo_item.quantity, 0) quantity,
 --	ci.quantity require_quantity,
---    ifnull(repo.quantity >= ci.quantity, 0) fulfilled
+--    ifnull(repo_item.quantity >= ci.quantity, 0) fulfilled
 --from repo_changing_item ci
 --	join repo_changing c on ci.repo_changing_id = c.id
---	left join repo on repo.material_id = ci.material_id
+--	left join repo on repo_item.material_id = ci.material_id
 --where c.type=-1 and c.status=1
 --and ci.repo_changing_id = cid
 --) t group by fulfilled -- where fulfilled is false
@@ -382,6 +382,193 @@
 --END$$
 --DELIMITER ;
 
+
+CREATE TABLE `organization` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `parent` INT NULL,
+  `type` SMALLINT NOT NULL COMMENT '0 - org; 1 - person; 2 - repo',
+  `hs` VARCHAR(200) NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+DROP TRIGGER IF EXISTS `organization_BEFORE_INSERT`;
+
+DELIMITER $$
+CREATE TRIGGER `organization_BEFORE_INSERT` BEFORE INSERT ON `organization` FOR EACH ROW
+BEGIN
+
+	DECLARE auto_id INT;
+    DECLARE parent_hs VARCHAR(200);
+    
+	SET auto_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_schema = schema() AND table_name = 'organization');
+	SET parent_hs = (SELECT hs FROM organization WHERE id=new.parent);
+    
+    IF parent_hs IS NULL THEN
+		SET new.hs = auto_id;
+	ELSE
+	  SET new.hs = CONCAT(parent_hs, "-", auto_id);
+    END IF; 
+
+END$$
+DELIMITER ;
+
+
+-- 
+DROP TRIGGER IF EXISTS `organization_BEFORE_UPDATE`;
+
+DELIMITER $$
+CREATE TRIGGER `organization_BEFORE_UPDATE` BEFORE UPDATE ON `organization` FOR EACH ROW
+BEGIN
+	declare parent_hs varchar(200);
+
+	set parent_hs = (select hs from organization where id = new.parent);
+
+    IF parent_hs IS NULL THEN
+		SET new.hs = old.id;
+	else
+	    set new.hs = concat(parent_hs, "-", old.id);
+	end if;
+END$$
+DELIMITER ;
+
+
+--
+DROP procedure IF EXISTS `rebuild_hs`;
+
+DELIMITER $$
+CREATE PROCEDURE `rebuild_hs` ()
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		ROLLBACK;
+		SELECT -1;
+	END;
+
+
+    START TRANSACTION;
+
+ 	-- UPDATE organization SET hs = null;
+
+	UPDATE organization SET hs=id WHERE parent IS NULL;
+
+	label:LOOP
+		UPDATE organization c, organization p SET c.hs=CONCAT(p.hs,"-", c.id) WHERE c.parent=p.id AND c.hs IS NULL AND p.hs IS NOT NULL;
+
+		SELECT ROW_COUNT() INTO @r;
+		IF @r =0 THEN
+			 LEAVE label;
+		END IF;
+	END LOOP;
+
+	COMMIT;
+
+	select 1;
+END$$
+DELIMITER ;
+
+
+--
+DROP procedure IF EXISTS `update_node_parent`;
+
+DELIMITER $$
+CREATE PROCEDURE `update_node_parent` (IN `idx` INT,IN `parentx` INT)
+main: BEGIN
+	DECLARE oldHs VARCHAR(200);
+    DECLARE newHs VARCHAR(200);
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	BEGIN
+		ROLLBACK;
+		SELECT 0;
+	END;
+
+
+    SELECT parent INTO @cur_parent FROM organization WHERE id=idx;
+    IF @cur_parent = parentx THEN
+		SELECT 1;
+		LEAVE main;
+    END IF;
+
+    SELECT is_child(idx, parentx) INTO @is_child;
+    IF @is_child > 0 THEN
+      SELECT 0;
+      LEAVE main;
+	END IF;
+
+    IF parentx = idx THEN
+		SELECT 0;
+        LEAVE main;
+	END IF;
+
+
+	SET @oldHs = (SELECT o.hs FROM organization o WHERE o.id=idx);
+	SET @newHs = CONCAT((SELECT o.hs FROM organization o WHERE o.id=parentx), "-", idx);
+
+	START TRANSACTION;
+
+	UPDATE organization o SET o.parent=parentx, hs=@newHs WHERE o.id=idx;
+
+	SET @oldHs = CONCAT(@oldHs, "-");
+
+	UPDATE organization SET hs = CONCAT(@newHs, SUBSTRING(hs, LENGTH(@oldHs))) WHERE LOCATE(@oldHs, hs) = 1;
+
+	COMMIT;
+
+	SELECT 1;
+
+END$$
+DELIMITER ;
+
+
+CREATE TABLE `hly`.`user` (
+  `id` INT NOT NULL,
+  `name` VARCHAR(30) NOT NULL,
+  `gender` TINYINT NULL COMMENT '0 - female; 1 = male',
+  `phone` VARCHAR(20) NOT NULL,
+  `password` VARCHAR(40) NOT NULL COMMENT 'md5 hashed',
+  `disabled` TINYINT NOT NULL DEFAULT 0 COMMENT '0/null: not disabled; others = disabled',
+  `comment` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `phone_UNIQUE` (`phone` ASC),
+  CONSTRAINT `fk_user_org`
+    FOREIGN KEY (`id`)
+    REFERENCES `hly`.`organization` (`id`)
+    ON DELETE CASCADE
+);
+
+
+CREATE TABLE `hly`.`role` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(50) NOT NULL,
+  `name` VARCHAR(50) NOT NULL,
+  `disabled` TINYINT NOT NULL DEFAULT 0,
+  `comment` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `role_code_UNIQUE` (`code` ASC),
+  UNIQUE INDEX `role_name_UNIQUE` (`name` ASC)
+);
+
+
+CREATE TABLE `user_role` (
+  `user_id` int(11) NOT NULL,
+  `role_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_id`,`role_id`),
+  KEY `fk_user_role_role_idx` (`role_id`),
+  CONSTRAINT `fk_user_role_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_user_role_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+CREATE TABLE `hly`.`privilege` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `code` VARCHAR(50) NOT NULL,
+  `name` VARCHAR(50) NOT NULL,
+  `disabled` TINYINT NOT NULL DEFAULT 0,
+  `comment` VARCHAR(100) NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `privilege_code_UNIQUE` (`code` ASC),
+  UNIQUE INDEX `privilege_name_UNIQUE` (`name` ASC)
+);
 
 
 select 1;

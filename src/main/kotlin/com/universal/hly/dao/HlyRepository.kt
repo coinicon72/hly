@@ -1,6 +1,8 @@
 package com.universal.hly.dao
 
 import com.universal.hly.model.*
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.NoRepositoryBean
@@ -12,6 +14,7 @@ import java.io.Serializable
 import java.util.*
 import javax.persistence.EntityManager
 import javax.persistence.PersistenceContext
+import javax.persistence.SqlResultSetMapping
 import javax.transaction.Transactional
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,7 +29,7 @@ import javax.transaction.Transactional
 @NoRepositoryBean
 interface MyBaseRepository<T, ID : Serializable> : JpaRepository<T, ID> {
 
-//    fun findById(id: ID): Optional<T>
+//    fun getById(id: ID): Optional<T>
 
 //    fun <S : T> save(entity: S): S
 }
@@ -156,10 +159,43 @@ interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, Int> {
 }
 
 
-//interface StockOutPreviewRepository : MyBaseRepository<StockOutPreview, Int> {
-//    @Query(nativeQuery = true, name = "RepoChanging.previewStockOut")
-//    fun previewStockOut(@Param("cid") cid: Int): List<StockOutPreview>
-//}
+interface RoleRepository : MyBaseRepository<Role, Int> {
+}
+
+
+interface PrivilegeRepository : MyBaseRepository<Privilege, Int> {
+}
+
+
+interface UserRepository : MyBaseRepository<User, Int> {
+//    @Query("select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+//            "info->>'\$.title' title, info->>'\$.pwd' password " +
+//            "from organization o where o.type = 1", nativeQuery = true)
+//    override fun findAll(): List<User>
+
+//    @Query("select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+//            "info->>'\$.title' title, info->>'\$.pwd' password " +
+//            "from organization o where o.type = 1", nativeQuery = true)
+//    override fun findAll(pageable: Pageable?): Page<User>
+//
+//    @Query("select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+//            "info->>'\$.title' title, info->>'\$.pwd' password " +
+//            "from organization o where o.type = 1 and id=:id", nativeQuery = true)
+//    override fun findById(id: Int): Optional<User>
+//
+//    @Query("select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+//            "info->>'\$.title' title, info->>'\$.pwd' password " +
+//            "from organization o where o.type = 1 and info->>'\$.phone' = :phone", nativeQuery = true)
+    @Query("select u from User u where u.phone = :phone")
+    fun getByPhone(phone: String): User?
+
+//    @Query("select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+//            "info->>'\$.title' title, info->>'\$.pwd' password " +
+//            "from organization o where o.type = 1 and id=:id", nativeQuery = true)
+//    override fun getOne(id: Int?): User
+
+//    override fun <S : User?> save(entity: S): S
+}
 
 // ==============================================================
 @Component

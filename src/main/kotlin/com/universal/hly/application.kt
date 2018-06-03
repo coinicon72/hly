@@ -3,6 +3,7 @@ package com.universal.hly
 //import com.universal.hly.model.Order
 import com.universal.hly.dao.ClientRepository
 import com.universal.hly.dao.MaterialRepository
+import org.apache.shiro.spring.LifecycleBeanPostProcessor
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator
@@ -38,9 +39,9 @@ class Application {
 //            log.info("")
 //
 //            // fetch an individual city by ID
-////            repository.findById(1L)
+////            repository.getById(1L)
 ////                    .ifPresent({ city ->
-////                        log.info("findById(1L):")
+////                        log.info("getById(1L):")
 ////                        log.info("--------------------------------")
 ////                        log.info(city.toString())
 ////                        log.info("")
@@ -89,6 +90,12 @@ class Application {
 //            println(r)
 //        }
 //    }
+
+
+    @Bean
+    fun lifecycleBeanPostProcessor(): LifecycleBeanPostProcessor {
+        return LifecycleBeanPostProcessor()
+    }
 
 
     // fix spring mvc controller annotation not working with shiro annotation by using cglib class proxy
