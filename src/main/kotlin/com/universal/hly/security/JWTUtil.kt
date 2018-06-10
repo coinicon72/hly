@@ -3,6 +3,7 @@ package com.universal.hly.security
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTDecodeException
+import com.auth0.jwt.exceptions.JWTVerificationException
 import java.io.UnsupportedEncodingException
 import java.util.*
 
@@ -69,7 +70,8 @@ import java.util.*
 //}
 
 // 过期时间7天
-const val EXPIRE_TIME = (7 * 24 * 60 * 1000).toLong()
+//const val EXPIRE_TIME = (7 * 24 * 60 * 60 * 1000).toLong()
+const val EXPIRE_TIME = (12 * 60 * 60 * 1000).toLong()
 
 // jwt uid claim
 const val UID_CLAIM = "uid"
@@ -81,17 +83,18 @@ const val UID_CLAIM = "uid"
  * @param secret 用户的密码
  * @return 是否正确
  */
+@Throws(JWTVerificationException::class)
 fun verifyJWT(token: String, uid: Int, secret: String): Boolean {
-    try {
+//    try {
         val algorithm = Algorithm.HMAC256(secret)
         val verifier = JWT.require(algorithm)
                 .withClaim(UID_CLAIM, uid)
                 .build()
         val jwt = verifier.verify(token)
         return true
-    } catch (exception: Exception) {
-        return false
-    }
+//    } catch (exception: Exception) {
+//        return false
+//    }
 }
 
 

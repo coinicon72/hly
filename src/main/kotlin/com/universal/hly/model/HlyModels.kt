@@ -1,7 +1,7 @@
 package com.universal.hly.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonInclude
 import org.hibernate.annotations.NaturalId
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
@@ -638,6 +638,7 @@ data class RepoChangingReason(
 @SqlResultSetMappings(SqlResultSetMapping(name = "stockInPreview",
         classes = [ConstructorResult(targetClass = StockInPreview::class,
                 columns = [
+                    ColumnResult(name = "repo_id", type = Int::class),
                     ColumnResult(name = "material_id", type = Int::class),
                     ColumnResult(name = "current_quantity", type = Float::class),
                     ColumnResult(name = "current_price", type = Float::class),
@@ -649,6 +650,7 @@ data class RepoChangingReason(
         SqlResultSetMapping(name = "stockOutPreview",
                 classes = [ConstructorResult(targetClass = StockOutPreview::class,
                         columns = [
+                            ColumnResult(name = "repo_id", type = Int::class),
                             ColumnResult(name = "material_id", type = Int::class),
                             ColumnResult(name = "quantity", type = Float::class),
                             ColumnResult(name = "require_quantity", type = Float::class),
@@ -662,7 +664,7 @@ data class RepoChangingReason(
 //            resultClasses = { Car.class },
                 parameters = [
                     StoredProcedureParameter(name = "cid", type = Integer::class, mode = ParameterMode.IN),
-                    StoredProcedureParameter(name = "executor", type = String::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "executor", type = Integer::class, mode = ParameterMode.IN),
                     StoredProcedureParameter(name = "comment", type = String::class, mode = ParameterMode.IN)
                 ]
         ),
@@ -672,7 +674,7 @@ data class RepoChangingReason(
 //            resultClasses = { Car.class },
                 parameters = [
                     StoredProcedureParameter(name = "cid", type = Integer::class, mode = ParameterMode.IN),
-                    StoredProcedureParameter(name = "executor", type = String::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "executor", type = Integer::class, mode = ParameterMode.IN),
                     StoredProcedureParameter(name = "comment", type = String::class, mode = ParameterMode.IN)
                 ]
         )
@@ -697,7 +699,10 @@ data class RepoChanging(
 
         val createDate: Date = Date(),
 
-        val applicant: String? = null,
+        @ManyToOne//(optional = true, fetch = FetchType.EAGER)
+        @JoinColumn(name = "applicant")
+        val applicant: User? = null,
+
         val applyingDate: Date? = null,
 
         @ManyToOne(optional = true, fetch = FetchType.EAGER)
@@ -722,6 +727,28 @@ data class RepoChanging(
         @OneToMany(mappedBy = "repoChanging")
         val items: List<RepoChangingItem> = LinkedList()
 )
+
+
+@Projection(name = "InlineRepoChanging", types = [RepoChanging::class])
+interface InlineRepoChanging {
+    fun getId(): Int
+    fun getRepo(): Repo?
+    fun getType(): Int
+    fun getStatus(): Int
+    fun getCreateDate(): Date
+    fun getApplicant(): User
+    fun getApplyingDate(): Date?
+    fun getReason(): RepoChangingReason
+    fun getReasonDetail(): String?
+    fun getOrder(): Order?
+    fun getDepartment(): String?
+    fun getVat(): Float
+    fun getVatInclusiveValue(): Float
+    fun getValue(): Float
+    fun getKeeper(): String?
+    fun getExecuteDate(): Date?
+    fun getComment(): String?
+}
 
 
 @Entity
@@ -764,7 +791,8 @@ data class RepoChangingItemKey(
 //                    ColumnResult(name = "new_price", type = Float::class)
 //                ])])
 data class StockInPreview(
-        val id: Int,
+        val repoId: Int,
+        val materialId: Int,
 
         val currentQuantity: Float = 0f,
         val currentPrice: Float = 0f,
@@ -786,7 +814,8 @@ data class StockInPreview(
 //                ])])
 data class StockOutPreview(
 //        @Id
-        val id: Int,
+        val repoId: Int,
+        val materialId: Int,
 
 //        @MapsId
 //        @OneToOne
@@ -868,7 +897,7 @@ data class User(
 
         val disabled: Boolean = false,
 
-        @ManyToMany
+        @ManyToMany//(fetch = FetchType.EAGER)
         @JoinTable(name = "user_role",
                 joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
                 inverseJoinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")]
@@ -887,9 +916,10 @@ data class Role(
 
         val name: String? = null,
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
 
-        @ManyToMany
+        @ManyToMany//(fetch = FetchType.EAGER)
         @JoinTable(name = "role_privilege",
                 joinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")],
                 inverseJoinColumns = [JoinColumn(name = "privilege_id", referencedColumnName = "id")]
@@ -908,5 +938,6 @@ data class Privilege(
 
         val name: String? = null,
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null
 )

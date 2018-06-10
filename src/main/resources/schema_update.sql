@@ -92,4 +92,22 @@
 --END$$
 --DELIMITER ;
 
+
+
+--ALTER TABLE `repo_changing`
+--CHANGE COLUMN `applicant` `applicant` INT NOT NULL ,
+--CHANGE COLUMN `keeper` `keeper` INT NULL DEFAULT NULL ,
+--ADD INDEX `fk_repo_changing_user_idx` (`applicant` ASC),
+--ADD INDEX `fk_repo_changing_keeper_user_idx` (`keeper` ASC);
+--ALTER TABLE `repo_changing`
+--ADD CONSTRAINT `fk_repo_changing_user`
+--  FOREIGN KEY (`applicant`)
+--  REFERENCES `user` (`id`)
+--  ON DELETE RESTRICT,
+--ADD CONSTRAINT `fk_repo_changing_keeper_user`
+--  FOREIGN KEY (`keeper`)
+--  REFERENCES `user` (`id`)
+--  ON DELETE RESTRICT
+-- ;
+
 select 1;

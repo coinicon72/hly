@@ -1,7 +1,6 @@
 package com.universal.hly.security
 
 import org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.RequestMethod
@@ -13,8 +12,7 @@ import javax.servlet.http.HttpServletResponse
 import java.io.IOException
 
 class JWTFilter : BasicHttpAuthenticationFilter() {
-
-    private val LOGGER = LoggerFactory.getLogger(this.javaClass)
+    private val logger = LoggerFactory.getLogger(this.javaClass)
 
     /**
      * 判断用户是否想要登入。
@@ -55,35 +53,39 @@ class JWTFilter : BasicHttpAuthenticationFilter() {
      * 如果有些资源只有登入用户才能访问，我们只需要在方法上面加上 @RequiresAuthentication 注解即可
      * 但是这样做有一个缺点，就是不能够对GET,POST等请求进行分别过滤鉴权(因为我们重写了官方的方法)，但实际上对应用影响不大
      */
-    //    @Override
-    //    protected boolean isAccessAllowed(ServletRequest request, ServletResponse response, Object mappedValue) {
-    //        if (isLoginAttempt(request, response)) {
-    //            try {
-    //                executeLogin(request, response);
-    //            } catch (Exception e) {
-    //                response401(request, response);
-    //            }
-    //        }
-    //        return true;
-    //    }
+//    override
+//    fun isAccessAllowed(request: ServletRequest, response: ServletResponse, mappedValue: Any?): Boolean {
+//        if (isLoginAttempt(request, response)) {
+//            try {
+//                executeLogin(request, response)
+//            } catch (e: Exception) {
+//                response401(request, response)
+//            }
+//        }
+//
+//        return true
+//    }
 
     /**
-     * //     * 对跨域提供支持
-     * //      */
-    //    @Override
-    //    protected boolean preHandle(ServletRequest request, ServletResponse response) throws Exception {
-    //        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-    //        HttpServletResponse httpServletResponse = (HttpServletResponse) response;
-    //        httpServletResponse.setHeader("Access-control-Allow-Origin", httpServletRequest.getHeader("Origin"));
-    //        httpServletResponse.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS,PUT,DELETE");
-    //        httpServletResponse.setHeader("Access-Control-Allow-Headers", httpServletRequest.getHeader("Access-Control-Request-Headers"));
-    //        // 跨域时会首先发送一个option请求，这里我们给option请求直接返回正常状态
-    //        if (httpServletRequest.getMethod().equals(RequestMethod.OPTIONS.name())) {
-    //            httpServletResponse.setStatus(HttpStatus.OK.value());
-    //            return false;
-    //        }
-    //        return super.preHandle(request, response);
-    //    }
+     * 对跨域提供支持
+     */
+    @Throws(Exception::class)
+    override
+    fun preHandle(request: ServletRequest, response: ServletResponse): Boolean {
+        val httpServletRequest: HttpServletRequest = request as HttpServletRequest
+        val httpServletResponse: HttpServletResponse = response as HttpServletResponse
+        httpServletResponse.setHeader("Access-control-Allow-Origin", "*")//httpServletRequest.getHeader("Origin"))
+        httpServletResponse.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS,PUT,PATCH,DELETE,HEAD")
+        httpServletResponse.setHeader("Access-Control-Allow-Headers", httpServletRequest.getHeader("Access-Control-Request-Headers"))
+
+        // 跨域时会首先发送一个option请求，这里我们给option请求直接返回正常状态
+        if (httpServletRequest.method == RequestMethod.OPTIONS.name) {
+            httpServletResponse.status = HttpStatus.OK.value()
+            return false
+        }
+
+        return super.preHandle(request, response)
+    }
 
     /**
      * 将非法请求跳转到 /401
@@ -93,7 +95,7 @@ class JWTFilter : BasicHttpAuthenticationFilter() {
             val httpServletResponse = resp as HttpServletResponse
             httpServletResponse.sendRedirect("/401")
         } catch (e: IOException) {
-            LOGGER.error(e.message)
+            logger.error(e.message)
         }
 
     }

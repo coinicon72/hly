@@ -4,9 +4,15 @@ import com.universal.hly.dao.InventoryRepository
 import com.universal.hly.dao.RepoHistoryRepository
 import com.universal.hly.dao.RepoRepository
 import com.universal.hly.model.Inventory
+import com.universal.hly.model.User
+import org.apache.shiro.SecurityUtils
+import org.apache.shiro.authz.annotation.RequiresPermissions
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.sql.SQLException
 import javax.persistence.EntityManager
 import javax.transaction.Transactional
 
@@ -14,6 +20,7 @@ import javax.transaction.Transactional
  * Created by swm on 2018-5-19
  */
 
+@RequiresPermissions(value = ["repo:inventory:write"])
 @RestController
 @RequestMapping(path = ["/api"],
         produces = [MediaType.APPLICATION_JSON_UTF8_VALUE])
@@ -47,21 +54,31 @@ class RepoChangingController {
 
     @PostMapping("/applyStockIn/{cid}")
     fun applyStockIn(@PathVariable(value = "cid") cid: Int,
-                     @RequestBody data: ApplyStockChanging) =
-            entityManager.createNamedStoredProcedureQuery("applyStockInChanging")
-                    .setParameter("cid", cid)
-                    .setParameter("executor", "admin")
-                    .setParameter("comment", data.comment)
-                    .execute()
+                     @RequestBody data: ApplyStockChanging): ResponseEntity<GenericRestResult> {
+
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        entityManager.createNamedStoredProcedureQuery("applyStockInChanging")
+                .setParameter("cid", cid)
+                .setParameter("executor", user.id)
+                .setParameter("comment", data.comment)
+                .execute()
+        return ResponseEntity(GenericRestResult(200), HttpStatus.OK)
+    }
 
     @PostMapping("/applyStockOut/{cid}")
     fun applyStockOut(@PathVariable(value = "cid") cid: Int,
-                      @RequestBody data: ApplyStockChanging) =
-            entityManager.createNamedStoredProcedureQuery("applyStockOutChanging")
-                    .setParameter("cid", cid)
-                    .setParameter("executor", "admin")
-                    .setParameter("comment", data.comment)
-                    .execute()
+                      @RequestBody data: ApplyStockChanging?): ResponseEntity<GenericRestResult> {
+
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        entityManager.createNamedStoredProcedureQuery("applyStockOutChanging")
+                .setParameter("cid", cid)
+                .setParameter("executor", user.id)
+                .setParameter("comment", data?.comment ?: "")
+                .execute()
+        return ResponseEntity(GenericRestResult(200), HttpStatus.OK)
+    }
 
     @PatchMapping("/inventory")
     @Transactional

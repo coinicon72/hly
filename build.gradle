@@ -61,7 +61,7 @@ dependencies {
     compile 'com.auth0:java-jwt:3.3.0'
 
     // lambok
-    compileOnly 'org.projectlombok:lombok:1.16.20'
+//    compileOnly 'org.projectlombok:lombok:1.16.20'
 
     // test
 //    testCompile group: 'junit', name: 'junit', version: '4.12'

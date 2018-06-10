@@ -103,7 +103,7 @@ class ShiroConfig {
         // 访问401和404页面不通过我们的Filter
         filterRuleMap["/401"] = "anon"
         filterRuleMap["/api/token"] = "anon"
-        filterRuleMap["/api/data/**"] = "anon"
+//        filterRuleMap["/api/data/**"] = "anon"
 
         // 所有请求通过我们自己的JWT Filter
         filterRuleMap["/**"] = "jwt"

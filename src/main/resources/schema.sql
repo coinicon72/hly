@@ -190,20 +190,22 @@
 --  `status` tinyint(4) NOT NULL default 0 COMMENT '0 = init; 1 = submitted; 2 = executed; -1 = rejected',
 --  `create_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 --  `applying_date` timestamp NULL,
---  `applicant` varchar(30) NOT NULL,
+--  `applicant` INT NOT NULL,
 --  `reason_id` INT NULL COMMENT 'null = custom reason',
 --  `reason_detail` VARCHAR(200) NULL DEFAULT NULL ,
 --  `department` varchar(50) null DEFAULT NULL,
 --  `vat` FLOAT UNSIGNED NULL DEFAULT 0 COMMENT '增值税税率，0即意味着不含税, 0.03 = 3%',
 --  `vat_ inclusive_value` FLOAT UNSIGNED NULL COMMENT '含增值税的金额',
 --  `value` FLOAT UNSIGNED NULL DEFAULT NULL COMMENT '不含增值税的总额。value = value_with_vat / 1 + vat' ,
---  `keeper` varchar(30) NULL,
+--  `keeper` INT NULL,
 --  `execute_date` timestamp null,
 --  `comment` varchar(200) default null,
 --  PRIMARY KEY (`id`),
 --  CONSTRAINT `fk_repo_changing_repo` FOREIGN KEY (`repo_id`) REFERENCES `repo` (`id`),
 --  CONSTRAINT `fk_repo_changing_order` FOREIGN KEY (`order_id`) REFERENCES `order` (`id`),
---  CONSTRAINT `fk_repo_changing_reason` FOREIGN KEY (`reason_id`) REFERENCES `repo_changing_reason` (`id`) ON DELETE SET NULL
+--  CONSTRAINT `fk_repo_changing_reason` FOREIGN KEY (`reason_id`) REFERENCES `repo_changing_reason` (`id`) ON DELETE SET NULL,
+--  CONSTRAINT `fk_repo_changing_user` FOREIGN KEY (`applicant`) REFERENCES `user` (`id`) ON DELETE RESTRICT,
+--  CONSTRAINT `fk_repo_changing_keeper_user` FOREIGN KEY (`keeper`) REFERENCES `user` (`id`) ON DELETE RESTRICT
 --) COMMENT='库存变化';
 --
 --CREATE TABLE `repo_changing_item` (
@@ -220,7 +222,7 @@
 
 
 --DELIMITER $$
---CREATE PROCEDURE `preview_stock_in_changing`(id int)
+--CREATE PROCEDURE `preview_stock_in_changing`(cid int)
 --BEGIN
 --
 --select *,
@@ -229,13 +231,13 @@
 --	round(current_quantity + in_quantity, 3) as new_quantity,
 --	round((current_quantity * current_price + in_quantity * in_price) / (current_quantity + in_quantity), 2) as new_price
 --from (
---select ci.material_id,
+--select c.repo_id, ci.material_id,
 --ifnull(repo.quantity, 0) current_quantity, ifnull(repo_item.price, 0) current_price,
 --ci.quantity in_quantity, ci.price in_price
 --from repo_changing_item ci
 --	join repo_changing c on ci.repo_changing_id = c.id
---    left join repo on repo_item.material_id = ci.material_id
---where c.type=1 and c.status=1 and ci.repo_changing_id = id
+--    left join repo on repo_item.repo_id = c.repo_id and repo_item.material_id = ci.material_id
+--where c.type=1 and c.status=1 and ci.repo_changing_id = cid
 --) tmp;
 --
 --END$$
@@ -246,13 +248,13 @@
 --CREATE PROCEDURE `preview_stock_out_changing`(cid int)
 --BEGIN
 --
---select ci.material_id,
+--select c.repo_id, ci.material_id,
 --	ifnull(repo_item.quantity, 0) quantity,
 --	ci.quantity require_quantity,
 --    ifnull(repo_item.quantity >= ci.quantity, 0) fulfilled
 --from repo_changing_item ci
 --	join repo_changing c on ci.repo_changing_id = c.id
---	left join repo on repo_item.material_id = ci.material_id
+--	left join repo_item on repo_item.repo_id = c.repo_id and repo_item.material_id = ci.material_id
 --where c.type=-1 and c.status=1
 --and ci.repo_changing_id = cid
 --;
@@ -262,51 +264,48 @@
 
 
 -- DELIMITER $$
--- CREATE PROCEDURE `apply_stock_in_changing`(cid int, executor varchar(30), cmt varchar(200))
--- BEGIN
-
---     DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+--CREATE PROCEDURE `apply_stock_in_changing`(cid int, executor int, cmt varchar(200))
+--BEGIN
+--
+--     DECLARE EXIT HANDLER FOR SQLEXCEPTION
 --         BEGIN
 --             ROLLBACK;
 --            resignal;
 --         END;
-
+--
 --     START TRANSACTION;
-
---         insert into repo (material_id, quantity, price) 
+--         insert into repo_item (repo_id, material_id, quantity, price)
 --         select * from (
---             select ci.material_id mid, 
---             ci.quantity nq, ci.price np 
+--             select c.repo_id, ci.material_id mid,
+--             ci.quantity nq, ci.price np
 --             from repo_changing_item ci join repo_changing c on ci.repo_changing_id = c.id where c.type = 1 and c.status=1 and ci.repo_changing_id = cid) si
 --         ON DUPLICATE KEY UPDATE price = round((np * nq + repo_item.quantity * price) / (repo_item.quantity + nq), 2), quantity = round(repo_item.quantity + nq, 3)
 --         ;
 
 --         update repo_changing set status=2, execute_date=now(), keeper=executor, comment=cmt where id=cid;
-
 --     COMMIT;
-
 -- END$$
 -- DELIMITER ;
 
 
 --DELIMITER $$
---CREATE DEFINER=`root`@`localhost` PROCEDURE `apply_stock_out_changing`(cid int, executor varchar(30), cmt varchar(200))
+--CREATE PROCEDURE `apply_stock_out_changing`(cid int, executor INT, cmt varchar(200))
 --BEGIN
 --	declare res, count, err int default 0;
 --	DECLARE done int DEFAULT FALSE;
 --
 --	declare c cursor for select fulfilled, count(*) from (
---select ci.material_id,
---	ifnull(repo_item.quantity, 0) quantity,
---	ci.quantity require_quantity,
---    ifnull(repo_item.quantity >= ci.quantity, 0) fulfilled
---from repo_changing_item ci
---	join repo_changing c on ci.repo_changing_id = c.id
---	left join repo on repo_item.material_id = ci.material_id
---where c.type=-1 and c.status=1
---and ci.repo_changing_id = cid
---) t group by fulfilled -- where fulfilled is false
---;
+--        select ci.material_id,
+--            ifnull(repo_item.quantity, 0) quantity,
+--            ci.quantity require_quantity,
+--            ifnull(repo_item.quantity >= ci.quantity, 0) fulfilled
+--        from repo_changing_item ci
+--            join repo_changing c on ci.repo_changing_id = c.id
+--            left join repo_item on repo_item.repo_id = c.repo_id and repo_item.material_id = ci.material_id
+--        where c.type=-1 and c.status=1
+--        and ci.repo_changing_id = cid
+--        ) t group by fulfilled -- where fulfilled is false
+--    ;
 --
 --	DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 --
@@ -345,9 +344,9 @@
 --    -- do it
 --    START TRANSACTION;
 --
---	update repo r, repo_changing c, repo_changing_item ci
+--	update repo_item r, repo_changing c, repo_changing_item ci
 --	set r.quantity = r.quantity - ci.quantity, ci.price = r.price, c.execute_date = now(), c.status = 2, c.keeper = executor, c.comment = cmt
---	where ci.repo_changing_id = c.id and ci.material_id = r.material_id and c.type=-1 and c.status=1 and c.id = cid;
+--	where r.repo_id = c.repo_id and ci.repo_changing_id = c.id and ci.material_id = r.material_id and c.type=-1 and c.status=1 and c.id = cid;
 --
 --    COMMIT;
 --
@@ -383,192 +382,192 @@
 --DELIMITER ;
 
 
-CREATE TABLE `organization` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `parent` INT NULL,
-  `type` SMALLINT NOT NULL COMMENT '0 - org; 1 - person; 2 - repo',
-  `hs` VARCHAR(200) NOT NULL,
-  PRIMARY KEY (`id`)
-);
-
-DROP TRIGGER IF EXISTS `organization_BEFORE_INSERT`;
-
-DELIMITER $$
-CREATE TRIGGER `organization_BEFORE_INSERT` BEFORE INSERT ON `organization` FOR EACH ROW
-BEGIN
-
-	DECLARE auto_id INT;
-    DECLARE parent_hs VARCHAR(200);
-    
-	SET auto_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_schema = schema() AND table_name = 'organization');
-	SET parent_hs = (SELECT hs FROM organization WHERE id=new.parent);
-    
-    IF parent_hs IS NULL THEN
-		SET new.hs = auto_id;
-	ELSE
-	  SET new.hs = CONCAT(parent_hs, "-", auto_id);
-    END IF; 
-
-END$$
-DELIMITER ;
-
-
--- 
-DROP TRIGGER IF EXISTS `organization_BEFORE_UPDATE`;
-
-DELIMITER $$
-CREATE TRIGGER `organization_BEFORE_UPDATE` BEFORE UPDATE ON `organization` FOR EACH ROW
-BEGIN
-	declare parent_hs varchar(200);
-
-	set parent_hs = (select hs from organization where id = new.parent);
-
-    IF parent_hs IS NULL THEN
-		SET new.hs = old.id;
-	else
-	    set new.hs = concat(parent_hs, "-", old.id);
-	end if;
-END$$
-DELIMITER ;
-
-
+--CREATE TABLE `organization` (
+--  `id` INT NOT NULL AUTO_INCREMENT,
+--  `parent` INT NULL,
+--  `type` SMALLINT NOT NULL COMMENT '0 - org; 1 - person; 2 - repo',
+--  `hs` VARCHAR(200) NOT NULL,
+--  PRIMARY KEY (`id`)
+--);
 --
-DROP procedure IF EXISTS `rebuild_hs`;
-
-DELIMITER $$
-CREATE PROCEDURE `rebuild_hs` ()
-BEGIN
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		ROLLBACK;
-		SELECT -1;
-	END;
-
-
-    START TRANSACTION;
-
- 	-- UPDATE organization SET hs = null;
-
-	UPDATE organization SET hs=id WHERE parent IS NULL;
-
-	label:LOOP
-		UPDATE organization c, organization p SET c.hs=CONCAT(p.hs,"-", c.id) WHERE c.parent=p.id AND c.hs IS NULL AND p.hs IS NOT NULL;
-
-		SELECT ROW_COUNT() INTO @r;
-		IF @r =0 THEN
-			 LEAVE label;
-		END IF;
-	END LOOP;
-
-	COMMIT;
-
-	select 1;
-END$$
-DELIMITER ;
-
-
+--DROP TRIGGER IF EXISTS `organization_BEFORE_INSERT`;
 --
-DROP procedure IF EXISTS `update_node_parent`;
-
-DELIMITER $$
-CREATE PROCEDURE `update_node_parent` (IN `idx` INT,IN `parentx` INT)
-main: BEGIN
-	DECLARE oldHs VARCHAR(200);
-    DECLARE newHs VARCHAR(200);
-
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-	BEGIN
-		ROLLBACK;
-		SELECT 0;
-	END;
-
-
-    SELECT parent INTO @cur_parent FROM organization WHERE id=idx;
-    IF @cur_parent = parentx THEN
-		SELECT 1;
-		LEAVE main;
-    END IF;
-
-    SELECT is_child(idx, parentx) INTO @is_child;
-    IF @is_child > 0 THEN
-      SELECT 0;
-      LEAVE main;
-	END IF;
-
-    IF parentx = idx THEN
-		SELECT 0;
-        LEAVE main;
-	END IF;
-
-
-	SET @oldHs = (SELECT o.hs FROM organization o WHERE o.id=idx);
-	SET @newHs = CONCAT((SELECT o.hs FROM organization o WHERE o.id=parentx), "-", idx);
-
-	START TRANSACTION;
-
-	UPDATE organization o SET o.parent=parentx, hs=@newHs WHERE o.id=idx;
-
-	SET @oldHs = CONCAT(@oldHs, "-");
-
-	UPDATE organization SET hs = CONCAT(@newHs, SUBSTRING(hs, LENGTH(@oldHs))) WHERE LOCATE(@oldHs, hs) = 1;
-
-	COMMIT;
-
-	SELECT 1;
-
-END$$
-DELIMITER ;
-
-
-CREATE TABLE `hly`.`user` (
-  `id` INT NOT NULL,
-  `name` VARCHAR(30) NOT NULL,
-  `gender` TINYINT NULL COMMENT '0 - female; 1 = male',
-  `phone` VARCHAR(20) NOT NULL,
-  `password` VARCHAR(40) NOT NULL COMMENT 'md5 hashed',
-  `disabled` TINYINT NOT NULL DEFAULT 0 COMMENT '0/null: not disabled; others = disabled',
-  `comment` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `phone_UNIQUE` (`phone` ASC),
-  CONSTRAINT `fk_user_org`
-    FOREIGN KEY (`id`)
-    REFERENCES `hly`.`organization` (`id`)
-    ON DELETE CASCADE
-);
-
-
-CREATE TABLE `hly`.`role` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(50) NOT NULL,
-  `name` VARCHAR(50) NOT NULL,
-  `disabled` TINYINT NOT NULL DEFAULT 0,
-  `comment` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `role_code_UNIQUE` (`code` ASC),
-  UNIQUE INDEX `role_name_UNIQUE` (`name` ASC)
-);
-
-
-CREATE TABLE `user_role` (
-  `user_id` int(11) NOT NULL,
-  `role_id` int(11) NOT NULL,
-  PRIMARY KEY (`user_id`,`role_id`),
-  KEY `fk_user_role_role_idx` (`role_id`),
-  CONSTRAINT `fk_user_role_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_user_role_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-
-CREATE TABLE `hly`.`privilege` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `code` VARCHAR(50) NOT NULL,
-  `name` VARCHAR(50) NOT NULL,
-  `disabled` TINYINT NOT NULL DEFAULT 0,
-  `comment` VARCHAR(100) NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE INDEX `privilege_code_UNIQUE` (`code` ASC),
-  UNIQUE INDEX `privilege_name_UNIQUE` (`name` ASC)
-);
+--DELIMITER $$
+--CREATE TRIGGER `organization_BEFORE_INSERT` BEFORE INSERT ON `organization` FOR EACH ROW
+--BEGIN
+--
+--	DECLARE auto_id INT;
+--    DECLARE parent_hs VARCHAR(200);
+--
+--	SET auto_id = (SELECT AUTO_INCREMENT FROM information_schema.tables WHERE table_schema = schema() AND table_name = 'organization');
+--	SET parent_hs = (SELECT hs FROM organization WHERE id=new.parent);
+--
+--    IF parent_hs IS NULL THEN
+--		SET new.hs = auto_id;
+--	ELSE
+--	  SET new.hs = CONCAT(parent_hs, "-", auto_id);
+--    END IF;
+--
+--END$$
+--DELIMITER ;
+--
+--
+----
+--DROP TRIGGER IF EXISTS `organization_BEFORE_UPDATE`;
+--
+--DELIMITER $$
+--CREATE TRIGGER `organization_BEFORE_UPDATE` BEFORE UPDATE ON `organization` FOR EACH ROW
+--BEGIN
+--	declare parent_hs varchar(200);
+--
+--	set parent_hs = (select hs from organization where id = new.parent);
+--
+--    IF parent_hs IS NULL THEN
+--		SET new.hs = old.id;
+--	else
+--	    set new.hs = concat(parent_hs, "-", old.id);
+--	end if;
+--END$$
+--DELIMITER ;
+--
+--
+----
+--DROP procedure IF EXISTS `rebuild_hs`;
+--
+--DELIMITER $$
+--CREATE PROCEDURE `rebuild_hs` ()
+--BEGIN
+--    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+--	BEGIN
+--		ROLLBACK;
+--		SELECT -1;
+--	END;
+--
+--
+--    START TRANSACTION;
+--
+-- 	-- UPDATE organization SET hs = null;
+--
+--	UPDATE organization SET hs=id WHERE parent IS NULL;
+--
+--	label:LOOP
+--		UPDATE organization c, organization p SET c.hs=CONCAT(p.hs,"-", c.id) WHERE c.parent=p.id AND c.hs IS NULL AND p.hs IS NOT NULL;
+--
+--		SELECT ROW_COUNT() INTO @r;
+--		IF @r =0 THEN
+--			 LEAVE label;
+--		END IF;
+--	END LOOP;
+--
+--	COMMIT;
+--
+--	select 1;
+--END$$
+--DELIMITER ;
+--
+--
+----
+--DROP procedure IF EXISTS `update_node_parent`;
+--
+--DELIMITER $$
+--CREATE PROCEDURE `update_node_parent` (IN `idx` INT,IN `parentx` INT)
+--main: BEGIN
+--	DECLARE oldHs VARCHAR(200);
+--    DECLARE newHs VARCHAR(200);
+--
+--    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+--	BEGIN
+--		ROLLBACK;
+--		SELECT 0;
+--	END;
+--
+--
+--    SELECT parent INTO @cur_parent FROM organization WHERE id=idx;
+--    IF @cur_parent = parentx THEN
+--		SELECT 1;
+--		LEAVE main;
+--    END IF;
+--
+--    SELECT is_child(idx, parentx) INTO @is_child;
+--    IF @is_child > 0 THEN
+--      SELECT 0;
+--      LEAVE main;
+--	END IF;
+--
+--    IF parentx = idx THEN
+--		SELECT 0;
+--        LEAVE main;
+--	END IF;
+--
+--
+--	SET @oldHs = (SELECT o.hs FROM organization o WHERE o.id=idx);
+--	SET @newHs = CONCAT((SELECT o.hs FROM organization o WHERE o.id=parentx), "-", idx);
+--
+--	START TRANSACTION;
+--
+--	UPDATE organization o SET o.parent=parentx, hs=@newHs WHERE o.id=idx;
+--
+--	SET @oldHs = CONCAT(@oldHs, "-");
+--
+--	UPDATE organization SET hs = CONCAT(@newHs, SUBSTRING(hs, LENGTH(@oldHs))) WHERE LOCATE(@oldHs, hs) = 1;
+--
+--	COMMIT;
+--
+--	SELECT 1;
+--
+--END$$
+--DELIMITER ;
+--
+--
+--CREATE TABLE `hly`.`user` (
+--  `id` INT NOT NULL,
+--  `name` VARCHAR(30) NOT NULL,
+--  `gender` TINYINT NULL COMMENT '0 - female; 1 = male',
+--  `phone` VARCHAR(20) NOT NULL,
+--  `password` VARCHAR(40) NOT NULL COMMENT 'md5 hashed',
+--  `disabled` TINYINT NOT NULL DEFAULT 0 COMMENT '0/null: not disabled; others = disabled',
+--  `comment` VARCHAR(45) NULL,
+--  PRIMARY KEY (`id`),
+--  UNIQUE INDEX `phone_UNIQUE` (`phone` ASC),
+--  CONSTRAINT `fk_user_org`
+--    FOREIGN KEY (`id`)
+--    REFERENCES `hly`.`organization` (`id`)
+--    ON DELETE CASCADE
+--);
+--
+--
+--CREATE TABLE `hly`.`role` (
+--  `id` INT NOT NULL AUTO_INCREMENT,
+--  `code` VARCHAR(50) NOT NULL,
+--  `name` VARCHAR(50) NOT NULL,
+--  `disabled` TINYINT NOT NULL DEFAULT 0,
+--  `comment` VARCHAR(45) NULL,
+--  PRIMARY KEY (`id`),
+--  UNIQUE INDEX `role_code_UNIQUE` (`code` ASC),
+--  UNIQUE INDEX `role_name_UNIQUE` (`name` ASC)
+--);
+--
+--
+--CREATE TABLE `user_role` (
+--  `user_id` int(11) NOT NULL,
+--  `role_id` int(11) NOT NULL,
+--  PRIMARY KEY (`user_id`,`role_id`),
+--  KEY `fk_user_role_role_idx` (`role_id`),
+--  CONSTRAINT `fk_user_role_role` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+--  CONSTRAINT `fk_user_role_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+--);
+--
+--
+--CREATE TABLE `hly`.`privilege` (
+--  `id` INT NOT NULL AUTO_INCREMENT,
+--  `code` VARCHAR(50) NOT NULL,
+--  `name` VARCHAR(50) NOT NULL,
+--  `disabled` TINYINT NOT NULL DEFAULT 0,
+--  `comment` VARCHAR(100) NULL,
+--  PRIMARY KEY (`id`),
+--  UNIQUE INDEX `privilege_code_UNIQUE` (`code` ASC),
+--  UNIQUE INDEX `privilege_name_UNIQUE` (`name` ASC)
+--);
 
 
 select 1;
