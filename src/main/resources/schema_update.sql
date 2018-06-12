@@ -48,7 +48,7 @@
 --CHANGE COLUMN `application` `reason_detail` VARCHAR(200) NULL DEFAULT NULL ,
 --CHANGE COLUMN `apply_date` `applying_date` TIMESTAMP NULL DEFAULT NULL,
 --ADD COLUMN `vat` FLOAT UNSIGNED NULL DEFAULT 0 COMMENT '增值税税率，0即意味着不含税, 0.03 = 3%' AFTER `department`,
---ADD COLUMN `vat_ inclusive_value` FLOAT UNSIGNED NULL COMMENT '含增值税的金额' AFTER `vat`,
+--ADD COLUMN `vat_inclusive_value` FLOAT UNSIGNED NULL COMMENT '含增值税的金额' AFTER `vat`,
 --CHANGE COLUMN `amount` `value` FLOAT UNSIGNED NULL DEFAULT NULL COMMENT '不含增值税的总额。\nvalue = value_with_vat / 1 + vat' ,
 --ADD INDEX `fk_repo_changing_repo_idx` (`repo_id` ASC),
 --ADD INDEX `fk_repo_changing_order_idx` (`order_id` ASC),

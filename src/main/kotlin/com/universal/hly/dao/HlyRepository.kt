@@ -184,6 +184,7 @@ interface RepoRepository : MyBaseRepository<Repo, Int> {
 // POST:   {"id": 5, "material": {"id": 5}, "quantity": 1.3, "price": 4.4}
 // DELETE: repos/5
 interface RepoItemRepository : MyBaseRepository<RepoItem, Long> {
+    fun findByRepo(@Param("repo") repo: Repo): List<RepoItem>
 }
 
 @RequiresPermissions(value = ["repo:inventory:read"])
