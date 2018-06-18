@@ -126,7 +126,10 @@ interface FormulaItemRepository : MyBaseRepository<FormulaItem, Long> {
 @RepositoryRestResource(excerptProjection = InlineMaterialType::class)
 interface MaterialRepository : MyBaseRepository<Material, Long> {
     fun findByCode(@Param("code") code: String): Optional<Material>
+
     fun findByName(@Param("name") name: String): Optional<Material>
+
+    fun findByCategory(category: Int): List<Material>
 }
 
 @RequiresPermissions(value = ["system:basic-data:read"])
@@ -186,6 +189,18 @@ interface RepoRepository : MyBaseRepository<Repo, Int> {
 interface RepoItemRepository : MyBaseRepository<RepoItem, Long> {
     fun findByRepo(@Param("repo") repo: Repo): List<RepoItem>
 }
+
+
+@RequiresPermissions(value = ["purchasing:plan:read"])
+interface PurchasingOrderRepository : MyBaseRepository<PurchasingOrder, Int> {
+    fun findBySigner(signer: User): List<PurchasingOrder>
+}
+
+
+@RequiresPermissions(value = ["purchasing:plan:read"])
+interface PurchasingOrderItemRepository : MyBaseRepository<PurchasingOrderItem, Int> {
+}
+
 
 @RequiresPermissions(value = ["repo:inventory:read"])
 // POST: {"comment": "test again"}
@@ -381,6 +396,28 @@ class RepoHistoryKeyConverter : BackendIdConverter {
         return RepoHistory::class.java == type
     }
 }
+
+
+ @Component
+ class PurchasingOrderItemKeyConverter : BackendIdConverter {
+
+     override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+         if (id == null) return null
+
+         val parts = id.split("_")
+         return PurchasingOrderItemKey(parts[0].toInt(), parts[1].toLong())
+     }
+
+     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+         val id: PurchasingOrderItemKey = source as PurchasingOrderItemKey
+         return String.format("%s_%s", id.purchasingOrder, id.material)
+     }
+
+     override fun supports(type: Class<*>): Boolean {
+         return PurchasingOrderItem::class.java == type
+     }
+ }
+
 
  @Component
  class RepoChangingItemKeyConverter : BackendIdConverter {

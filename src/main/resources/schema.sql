@@ -58,6 +58,7 @@
 --	name varchar(50) not null,
 --	safe_quantity float not null,
 -- 	spec varchar(20) null,
+--  `category` TINYINT NOT NULL DEFAULT 0 COMMENT '0=物料;1=成品',
 --	type_id bigint not null,
 --	primary key (id));
 --
@@ -144,6 +145,34 @@
 --alter table order_item add constraint fk_order_item_product foreign key (product_id) references product (id);
 --
 --alter table produce_condition add constraint fk_formula_produce_cond foreign key (formula_id) references formula (id) ON DELETE CASCADE;
+
+
+--CREATE TABLE `purchasing_order` (
+--  `id` int(11) NOT NULL AUTO_INCREMENT,
+--  `no` varchar(50) NOT NULL COMMENT 'order no',
+--  `date` timestamp NOT NULL,
+--  `tax` tinyint(4) NOT NULL COMMENT '1 = tax inclusive; 0 = tax exclusive',
+--  `vat` float unsigned NULL DEFAULT 0,
+--  `supplier` varchar(100) NOT NULL,
+--  `signer` int(11) NOT NULL,
+--  `comment` varchar(200) DEFAULT NULL,
+--  PRIMARY KEY (`id`),
+--  UNIQUE KEY `no_UNIQUE` (`no`),
+--  CONSTRAINT `fk_purchasing_order_signer` FOREIGN KEY (`signer`) REFERENCES `user` (`id`)
+--);
+--
+--CREATE TABLE `purchasing_order_item` (
+--  `purchasing_order_id` int(11) NOT NULL,
+--  `material_id` bigint(20) NOT NULL,
+--  `quantity` float unsigned NOT NULL,
+--  `vip` float unsigned NOT NULL,
+--  `vat` float unsigned NOT NULL DEFAULT 0,
+--  `vep` float unsigned NOT NULL COMMENT 'vat excluded price. vep = vip / (1 + vat)',
+--  PRIMARY KEY (`purchasing_order_id`,`material_id`),
+--  KEY `fk_purchasing_order_material` (`material_id`),
+--  CONSTRAINT `fk_purchasing_order_item_purchasing_order` FOREIGN KEY (`purchasing_order_id`) REFERENCES `purchasing_order` (`id`),
+--  CONSTRAINT `fk_purchasing_order_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)
+--) COMMENT='采购单条目';
 
 
 --CREATE TABLE `repo` (

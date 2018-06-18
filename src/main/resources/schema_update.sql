@@ -110,4 +110,10 @@
 --  ON DELETE RESTRICT
 -- ;
 
+
+
+--ALTER TABLE `hly`.`material`
+--ADD COLUMN `category` TINYINT(4) NOT NULL DEFAULT '0' COMMENT '0=物料;1=成品' ;
+
+
 select 1;

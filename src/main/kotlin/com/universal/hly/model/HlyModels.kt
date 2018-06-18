@@ -426,6 +426,8 @@ data class Material(
         @Column(nullable = false, length = 50)
         val name: String = "",
 
+        val category: Int = 0,
+
         @ManyToOne//(fetch = FetchType.EAGER)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_material_type"))
         val type: MaterialType? = null,
@@ -525,6 +527,64 @@ data class BomItem(
 @Embeddable
 data class BomItemKey(
         val bom: Long = 0,
+        val material: Long = 0
+) : Serializable
+
+
+@Entity
+data class PurchasingOrder (
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Int,
+
+        val no: String = "",
+
+        val date: Date? = null,
+
+        val tax: Boolean = false,
+
+        val vat: Float = 0f,
+
+        val supplier: String? = null,
+
+        @ManyToOne
+        @JoinColumn(name = "signer")
+        val signer: User? = null,
+
+        val comment: String? = null,
+
+        @OneToMany(mappedBy = "purchasingOrder")
+        val items: List<PurchasingOrderItem> = LinkedList()
+)
+
+
+@Entity
+data class PurchasingOrderItem (
+        @EmbeddedId
+        val id: PurchasingOrderItemKey,
+
+        @MapsId(value = "purchasingOrder")
+        @ManyToOne
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_item_repo"))
+        val purchasingOrder: PurchasingOrder? = null,
+
+        @MapsId(value = "material")
+        @ManyToOne
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_item_material"))
+        val material: Material? = null,
+
+        val quantity: Float? = null,
+
+        val vip: Float? = null,
+
+        val vat: Float? = null,
+
+        val vep: Float? = null
+) : Serializable
+
+@Embeddable
+data class PurchasingOrderItemKey(
+        val purchasingOrder: Int = 0,
         val material: Long = 0
 ) : Serializable
 
@@ -710,6 +770,9 @@ data class RepoChanging(
 
 //        @Column(name = "reason")
         val reasonDetail: String? = null,
+
+        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+        val purchasingOrder: PurchasingOrder? = null,
 
         @ManyToOne(optional = true, fetch = FetchType.EAGER)
         val order: Order? = null,
