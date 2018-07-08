@@ -599,4 +599,17 @@
 --);
 
 
+-- use mysql 8 COMMON TABLE EXPRESS (cte) support to generate HIERARCHY PATH STRING (hs) and more (like LEVEL),
+-- without extra triggers and util store produces needed
+--CREATE VIEW `v_organization` AS
+--  with recursive `o` (`id`,`type`,`info`,`hs`,`parent`, `level`)
+--  as (
+--    select `id`, `type`, `info`, `concat(id)`, `parent`, 1 from `organization` where isnull(`parent`)
+--    union
+--    select `n`.`id`, `n`.`type`, `n`.`info`, concat(`o`.`hs`,'-',`n`.`id`), `n`.`parent`, o.level + 1 from (`organization` `n` join `o`) where (`n`.`parent` = `o`.`id`)
+--  )
+--select * from `o`;
+
+
+
 select 1;

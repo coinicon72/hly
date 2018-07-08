@@ -3,6 +3,7 @@ package com.universal.hly.controller.rest
 import com.universal.hly.dao.InventoryRepository
 import com.universal.hly.dao.RepoHistoryRepository
 import com.universal.hly.dao.RepoRepository
+import com.universal.hly.dao.UserRepository
 import com.universal.hly.model.Inventory
 import com.universal.hly.model.User
 import org.apache.shiro.SecurityUtils
@@ -19,6 +20,22 @@ import javax.transaction.Transactional
 /**
  * Created by swm on 2018-5-19
  */
+@RequiresPermissions(value = ["system:user-management:write"])
+@RestController
+@RequestMapping(path = ["/api"],
+        produces = [MediaType.APPLICATION_JSON_UTF8_VALUE])
+class SysAdminController {
+
+    @Autowired
+    lateinit var userRepository: UserRepository
+
+//    @PostMapping("/user")
+////    @Transactional
+//    fun addUser(@RequestBody data: User): User {
+//        return userRepository.add()
+//    }
+}
+
 
 @RequiresPermissions(value = ["repo:inventory:write"])
 @RestController
@@ -85,7 +102,7 @@ class RepoChangingController {
     fun inventory(@RequestBody data: List<InventoryUpdating>): Boolean {
 //        val inventory = inventoryRepository.save(Inventory(0, comment = "test"))
 
-        data.forEach({
+        data.forEach {
             if (it.quantity != null || it.price != null) {
                 var sql = "update repo set "
 
@@ -100,7 +117,7 @@ class RepoChangingController {
                 entityManager.createNativeQuery(sql)
                         .executeUpdate()
             }
-        })
+        }
 
         return true
     }

@@ -45,7 +45,7 @@ data class Client(
         @Column(length = 100)
         val fullName: String? = null,
 
-        @ManyToOne(fetch = FetchType.EAGER)
+        @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_client_type"))
         val type: ClientType? = null,
 
@@ -53,8 +53,17 @@ data class Client(
         @Column(unique = true, nullable = false, length = 50)
         val contractNo: String = "",
 
-        @Column(length = 100)
-        val settlementPolicy: String? = null,
+        @Column(length = 50)
+        val collectingPolicy: String? = null,
+
+        @Column
+        val collectingPeriod: Int = 60,
+
+        @Column(length = 50)
+        val paymentPolicy: String? = null,
+
+        @Column
+        val paymentPeriod: Int = 60,
 
         @Column(length = 200)
         val address: String? = null,
@@ -79,13 +88,13 @@ data class Client(
         @OneToMany(mappedBy = "client")//, cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
         val orders: MutableList<Order> = mutableListOf()
 ) {
+    override fun toString(): String {
+        return "Client(id=$id, name='$name', fullName=$fullName, type=$type, contractNo='$contractNo', collectingPolicy=$collectingPolicy, collectingPeriod=$collectingPeriod, paymentPolicy=$paymentPolicy, paymentPeriod=$paymentPeriod, address=$address, deliveryAddress=$deliveryAddress, postCode=$postCode, contact=$contact, phone=$phone, comment=$comment, metadata=$metadata)"
+    }
 //    fun addOrder(order: Order) {
 //        orders.add()
 //    }
 
-    override fun toString(): String {
-        return "Client(id=$id, name='$name', fullName=$fullName, type=$type, contractNo='$contractNo', settlementPolicy=$settlementPolicy, address=$address, deliveryAddress=$deliveryAddress, postCode=$postCode, contact=$contact, phone=$phone, comment=$comment, metadata=$metadata)"
-    }
 }
 
 @Projection(types = [Client::class])
@@ -95,7 +104,10 @@ interface InlineClientType {
     fun getFullName(): String
     fun getType(): ClientType
     fun getContractNo(): String
-    fun getSettlementPolicy(): String
+    fun getCollectingPolicy(): String
+    fun getCollectingPeriod(): Int
+    fun getPaymentPolicy(): String
+    fun getPaymentPeriod(): Int
     fun getAddress(): String
     fun getDeliveryAddress(): String
     fun getPostCode(): String
@@ -532,7 +544,7 @@ data class BomItemKey(
 
 
 @Entity
-data class PurchasingOrder (
+data class PurchasingOrder(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Int,
@@ -559,7 +571,7 @@ data class PurchasingOrder (
 
 
 @Entity
-data class PurchasingOrderItem (
+data class PurchasingOrderItem(
         @EmbeddedId
         val id: PurchasingOrderItemKey,
 
@@ -897,9 +909,10 @@ data class Organization(
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Int,
 
-        @ManyToOne
-        @JoinColumn(name = "parent")
-        val parent: Organization? = null,
+//        @ManyToOne
+//        @JoinColumn(name = "parent")
+//        val parent: Organization? = null,
+        val parent: Int? = null,
 
         val hs: String? = null,
 
@@ -944,6 +957,20 @@ data class Organization(
 //                    ColumnResult(name = "password", type = String::class)
 //                ])])
 //)
+@NamedStoredProcedureQueries(
+        NamedStoredProcedureQuery(
+                name = "addUser",
+                procedureName = "add_user",
+                resultClasses = [User::class],
+                parameters = [
+                    StoredProcedureParameter(name = "did", type = Integer::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "name", type = String::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "phone", type = String::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "password", type = String::class, mode = ParameterMode.IN),
+                    StoredProcedureParameter(name = "comment", type = String::class, mode = ParameterMode.IN)
+                ]
+        )
+)
 
 data class User(
         @Id
@@ -1004,3 +1031,85 @@ data class Privilege(
         @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null
 )
+
+
+@Entity
+data class CollectingSettlement(
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Int,
+
+        @ManyToOne
+        val client: Client? = null,
+
+        val createDate: Date = Date(),
+
+        val status: Int = 0,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val comment: String? = null,
+
+        @OneToMany(mappedBy = "settlement")
+        val items: List<CollectingSettlementItem> = ArrayList()
+)
+
+
+@Entity
+@IdClass(CollectingSettlementItemPk::class)
+data class CollectingSettlementItem(
+        @Id
+        @ManyToOne
+//        @JoinColumn(name = "settlement_id")
+        val settlement: PaymentSettlement? = null,
+
+        @Id
+        @ManyToOne
+        val order: Order? = null
+)
+
+
+data class CollectingSettlementItemPk(
+        val settlement: PaymentSettlement? = null,
+        val order: Order? = null
+): Serializable
+
+
+@Entity
+data class PaymentSettlement(
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Int,
+
+        @ManyToOne
+        val client: Client? = null,
+
+        val createDate: Date = Date(),
+
+        val status: Int = 0,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val comment: String? = null,
+
+        @OneToMany(mappedBy = "settlement")
+        val items: List<PaymentSettlementItem> = ArrayList()
+)
+
+
+@Entity
+@IdClass(PaymentSettlementItemPk::class)
+data class PaymentSettlementItem(
+        @Id
+        @ManyToOne
+//        @JoinColumn(name = "settlement_id")
+        val settlement: PaymentSettlement? = null,
+
+        @Id
+        @ManyToOne
+        //        @JoinColumn(name = "order_id")
+        val order: PurchasingOrder? = null
+)
+
+data class PaymentSettlementItemPk(
+        val settlement: PaymentSettlement? = null,
+        val order: PurchasingOrder? = null
+): Serializable

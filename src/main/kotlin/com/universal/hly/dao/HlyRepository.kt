@@ -284,6 +284,9 @@ interface RoleRepository : MyBaseRepository<Role, Int> {
 interface PrivilegeRepository : MyBaseRepository<Privilege, Int> {
 }
 
+@RequiresPermissions(value = ["system:basic-data:read"])
+interface OrganizationRepository : MyBaseRepository<Organization, Int> {
+}
 
 @RequiresPermissions(value = ["system:user-management:read"])
 interface UserRepository : MyBaseRepository<User, Int> {
@@ -308,6 +311,14 @@ interface UserRepository : MyBaseRepository<User, Int> {
     @Query("select u from User u where u.phone = :phone")
     fun getByPhone(phone: String): User?
 
+//    @Query(nativeQuery = true, name = "User.addUser")
+//    fun add(@Param("did") did: Int,
+//            @Param("name") name: String,
+//            @Param("phone") phone: String,
+//            @Param("password") password: String,
+//            @Param("comment") comment : String) : User
+
+
 //    @Query("select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
 //            "info->>'\$.title' title, info->>'\$.pwd' password " +
 //            "from organization o where o.type = 1 and id=:id", nativeQuery = true)
@@ -316,7 +327,28 @@ interface UserRepository : MyBaseRepository<User, Int> {
 //    override fun <S : User?> save(entity: S): S
 }
 
+
+//@RequiresPermissions(value = ["system:basic-data:read"])
+interface CollectingSettlementRepository : MyBaseRepository<CollectingSettlement, Int> {
+    fun findByStatus(status: Int): List<CollectingSettlement>
+    fun findByStatusLessThan(status: Int): List<CollectingSettlement>
+}
+
+interface CollectingSettlementItemRepository : MyBaseRepository<CollectingSettlementItem, Int> {
+}
+
+
+interface PaymentSettlementRepository : MyBaseRepository<PaymentSettlement, Int> {
+    fun findByStatus(status: Int): List<PaymentSettlement>
+    fun findByStatusLessThan(status: Int): List<PaymentSettlement>
+}
+
+interface PaymentSettlementItemRepository : MyBaseRepository<PaymentSettlementItem, Int> {
+}
+
+
 // ==============================================================
+//region key converters
 @Component
 class FormulaItemKeyConverter : BackendIdConverter {
 
@@ -438,3 +470,4 @@ class RepoHistoryKeyConverter : BackendIdConverter {
          return RepoChangingItem::class.java == type
      }
  }
+//endregion
