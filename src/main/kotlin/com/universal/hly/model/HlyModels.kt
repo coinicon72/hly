@@ -57,13 +57,13 @@ data class Client(
         val collectingPolicy: String? = null,
 
         @Column
-        val collectingPeriod: Int = 60,
+        val collectingPeriod: Int? = 60,
 
         @Column(length = 50)
         val paymentPolicy: String? = null,
 
         @Column
-        val paymentPeriod: Int = 60,
+        val paymentPeriod: Int? = 60,
 
         @Column(length = 200)
         val address: String? = null,
@@ -104,10 +104,10 @@ interface InlineClientType {
     fun getFullName(): String
     fun getType(): ClientType
     fun getContractNo(): String
-    fun getCollectingPolicy(): String
-    fun getCollectingPeriod(): Int
-    fun getPaymentPolicy(): String
-    fun getPaymentPeriod(): Int
+    fun getCollectingPolicy(): String?
+    fun getCollectingPeriod(): Int?
+    fun getPaymentPolicy(): String?
+    fun getPaymentPeriod(): Int?
     fun getAddress(): String
     fun getDeliveryAddress(): String
     fun getPostCode(): String
@@ -557,17 +557,20 @@ data class PurchasingOrder(
 
         val vat: Float = 0f,
 
-        val supplier: String? = null,
+        @ManyToOne
+        val supplier: Client? = null,
 
         @ManyToOne
         @JoinColumn(name = "signer")
         val signer: User? = null,
 
+        val status: Int = 0,
+
         val comment: String? = null,
 
         @OneToMany(mappedBy = "purchasingOrder")
         val items: List<PurchasingOrderItem> = LinkedList()
-)
+): Serializable
 
 
 @Entity
@@ -1046,6 +1049,12 @@ data class CollectingSettlement(
 
         val status: Int = 0,
 
+        @ManyToOne
+        @JoinColumn(name = "confirmed_by")
+        val confirmedBy: User? = null,
+
+        val confirmedDate: Date? = null,
+
         @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
 
@@ -1053,25 +1062,52 @@ data class CollectingSettlement(
         val items: List<CollectingSettlementItem> = ArrayList()
 )
 
+@Projection(name = "CollectingSettlement", types = [CollectingSettlement::class])
+interface CollectingSettlementProjection {
+    fun getId(): Int
+
+    fun getClient(): Client
+
+    fun getCreateDate(): Date
+
+    fun getStatus(): Int
+
+    fun getConfirmedBy(): User?
+
+    fun getConfirmedDate(): Date?
+
+    fun getComment(): String?
+
+//    fun getItems(): List<CollectingSettlementItem>
+}
+
 
 @Entity
-@IdClass(CollectingSettlementItemPk::class)
 data class CollectingSettlementItem(
-        @Id
+        @EmbeddedId
+        val id: CollectingSettlementItemKey,
+
+        @MapsId("settlement")
         @ManyToOne
 //        @JoinColumn(name = "settlement_id")
-        val settlement: PaymentSettlement? = null,
+        val settlement: CollectingSettlement? = null,
 
-        @Id
+        @MapsId("order")
         @ManyToOne
         val order: Order? = null
 )
 
-
-data class CollectingSettlementItemPk(
-        val settlement: PaymentSettlement? = null,
-        val order: Order? = null
+@Embeddable
+class CollectingSettlementItemKey(
+        val settlement: Int = 0,
+        val order: Long = 0
 ): Serializable
+
+@Projection(name = "CollectingSettlementItem", types = [CollectingSettlementItem::class])
+interface CollectingSettlementItemProjection {
+    fun getId(): CollectingSettlementItemKey
+    fun getOrder(): Order
+}
 
 
 @Entity
@@ -1087,6 +1123,12 @@ data class PaymentSettlement(
 
         val status: Int = 0,
 
+        @ManyToOne
+        @JoinColumn(name = "confirmed_by")
+        val confirmedBy: User? = null,
+
+        val confirmedDate: Date? = null,
+
         @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
 
@@ -1094,22 +1136,50 @@ data class PaymentSettlement(
         val items: List<PaymentSettlementItem> = ArrayList()
 )
 
+@Projection(name = "PaymentSettlement", types = [PaymentSettlement::class])
+interface PaymentSettlementProjection {
+    fun getId(): Int
+
+    fun getClient(): Client
+
+    fun getCreateDate(): Date
+
+    fun getStatus(): Int
+
+    fun getConfirmedBy(): User?
+
+    fun getConfirmedDate(): Date?
+
+    fun getComment(): String?
+
+//    fun getItems(): List<CollectingSettlementItem>
+}
+
 
 @Entity
-@IdClass(PaymentSettlementItemPk::class)
 data class PaymentSettlementItem(
-        @Id
+        @EmbeddedId
+        val id: PaymentSettlementItemKey,
+
+        @MapsId(value = "settlement")
         @ManyToOne
 //        @JoinColumn(name = "settlement_id")
         val settlement: PaymentSettlement? = null,
 
-        @Id
+        @MapsId(value = "order")
         @ManyToOne
         //        @JoinColumn(name = "order_id")
         val order: PurchasingOrder? = null
-)
-
-data class PaymentSettlementItemPk(
-        val settlement: PaymentSettlement? = null,
-        val order: PurchasingOrder? = null
 ): Serializable
+
+@Embeddable
+data class PaymentSettlementItemKey(
+        val settlement: Int = 0,
+        val order: Int = 0
+): Serializable
+
+@Projection(name = "PaymentSettlementItem", types = [PaymentSettlementItem::class])
+interface PaymentSettlementItemProjection {
+    fun getId(): PaymentSettlementItemKey
+    fun getOrder(): PurchasingOrder
+}

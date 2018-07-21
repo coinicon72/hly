@@ -10,6 +10,7 @@ import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.query.Param
 import org.springframework.data.rest.core.annotation.RepositoryRestResource
 import org.springframework.data.rest.webmvc.spi.BackendIdConverter
+import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.stereotype.Component
 import java.io.Serializable
 import java.util.*
@@ -61,6 +62,17 @@ interface ClientTypeRepository : MyBaseRepository<ClientType, Long> {
     fun findByName(name: String): Optional<ClientType>
 }
 
+
+@RequiresPermissions(value = ["sales:client:read"])
+@RepositoryRestResource(excerptProjection = InlineClientType::class)
+interface ClientRepository : MyBaseRepository<Client, Long>, ClientRepositoryCustom {
+    fun findByName(@Param("name") name: String): List<Client>
+
+    fun findByPaymentPolicyIsNotNull(): List<Client>
+
+    fun findByCollectingPolicyIsNotNull(): List<Client>
+}
+
 // custom repository name must ends with "Custom"
 interface ClientRepositoryCustom {
     fun anyOperation(client: Client)
@@ -81,16 +93,19 @@ open class ClientRepositoryImpl : ClientRepositoryCustom {
     }
 }
 
-@RequiresPermissions(value = ["sales:client:read"])
-@RepositoryRestResource(excerptProjection = InlineClientType::class)
-interface ClientRepository : MyBaseRepository<Client, Long>, ClientRepositoryCustom {
-    fun findByName(@Param("name") name: String): List<Client>
-}
 
 @RequiresPermissions(value = ["sales:order:read"])
 interface OrderRepository : MyBaseRepository<Order, Long> {
     fun findByNo(@Param("no") no: String): Optional<Order>
+
     fun findByStatusEquals(@Param("status") status: Int): List<Order>
+
+    fun findByClientAndStatus(client: Client, status: Int): List<Order>
+
+    fun findByClientAndStatusAndDeliveryDateBefore(client: Client, status: Int,
+                                                   @Param("date")
+                                                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                   deliveryDate: Date): List<Order>
 }
 
 @RequiresPermissions(value = ["sales:order:read"])
@@ -117,7 +132,7 @@ interface FormulaRepository : MyBaseRepository<Formula, Long> {
 }
 
 @RequiresPermissions(value = ["production:formula:read"])
-interface FormulaItemRepository : MyBaseRepository<FormulaItem, Long> {
+interface FormulaItemRepository : MyBaseRepository<FormulaItem, FormulaItemKey> {
     @Query("select * from formula_item where formula_id = ?1", nativeQuery = true)
     fun findByFormula(@Param("id") id: Long): List<FormulaItem>
 }
@@ -186,7 +201,7 @@ interface RepoRepository : MyBaseRepository<Repo, Int> {
 @RequiresPermissions(value = ["repo:inventory:read"])
 // POST:   {"id": 5, "material": {"id": 5}, "quantity": 1.3, "price": 4.4}
 // DELETE: repos/5
-interface RepoItemRepository : MyBaseRepository<RepoItem, Long> {
+interface RepoItemRepository : MyBaseRepository<RepoItem, RepoItemKey> {
     fun findByRepo(@Param("repo") repo: Repo): List<RepoItem>
 }
 
@@ -194,11 +209,13 @@ interface RepoItemRepository : MyBaseRepository<RepoItem, Long> {
 @RequiresPermissions(value = ["purchasing:plan:read"])
 interface PurchasingOrderRepository : MyBaseRepository<PurchasingOrder, Int> {
     fun findBySigner(signer: User): List<PurchasingOrder>
+
+    fun findBySupplierAndStatus(supplier: Client, status: Int): List<PurchasingOrder>
 }
 
 
 @RequiresPermissions(value = ["purchasing:plan:read"])
-interface PurchasingOrderItemRepository : MyBaseRepository<PurchasingOrderItem, Int> {
+interface PurchasingOrderItemRepository : MyBaseRepository<PurchasingOrderItem, PurchasingOrderItemKey> {
 }
 
 
@@ -209,7 +226,7 @@ interface InventoryRepository : MyBaseRepository<Inventory, Int> {
 
 @RequiresPermissions(value = ["repo:inventory:read"])
 // POST {"id": {"inventory": 0, "material": 0}, "inventory": {"id":2}, "material": {"id":5}, "quantity": 1.3, "price": 4.4}
-interface RepoHistoryRepository : MyBaseRepository<RepoHistory, Int> {
+interface RepoHistoryRepository : MyBaseRepository<RepoHistory, RepoHistoryKey> {
 }
 
 @RequiresPermissions(value = ["system:basic-data:read"])
@@ -245,7 +262,7 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
 
 @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
 // POST {"id": {"repoChanging": 0, "material": 0}, "repoChanging": {"id":1}, "material": {"id":6}, "quantity": -1.3, "price": 4.4}
-interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, Int> {
+interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, RepoChangingItemKey> {
 }
 
 
@@ -329,21 +346,25 @@ interface UserRepository : MyBaseRepository<User, Int> {
 
 
 //@RequiresPermissions(value = ["system:basic-data:read"])
+@RepositoryRestResource(excerptProjection = CollectingSettlementProjection::class)
 interface CollectingSettlementRepository : MyBaseRepository<CollectingSettlement, Int> {
     fun findByStatus(status: Int): List<CollectingSettlement>
     fun findByStatusLessThan(status: Int): List<CollectingSettlement>
 }
 
-interface CollectingSettlementItemRepository : MyBaseRepository<CollectingSettlementItem, Int> {
+@RepositoryRestResource(excerptProjection = CollectingSettlementItemProjection::class)
+interface CollectingSettlementItemRepository : MyBaseRepository<CollectingSettlementItem, CollectingSettlementItemKey> {
 }
 
 
+@RepositoryRestResource(excerptProjection = PaymentSettlementProjection::class)
 interface PaymentSettlementRepository : MyBaseRepository<PaymentSettlement, Int> {
     fun findByStatus(status: Int): List<PaymentSettlement>
     fun findByStatusLessThan(status: Int): List<PaymentSettlement>
 }
 
-interface PaymentSettlementItemRepository : MyBaseRepository<PaymentSettlementItem, Int> {
+@RepositoryRestResource(excerptProjection = PaymentSettlementItemProjection::class)
+interface PaymentSettlementItemRepository : MyBaseRepository<PaymentSettlementItem, PaymentSettlementItemKey> {
 }
 
 
@@ -468,6 +489,48 @@ class RepoHistoryKeyConverter : BackendIdConverter {
 
      override fun supports(type: Class<*>): Boolean {
          return RepoChangingItem::class.java == type
+     }
+ }
+
+
+ @Component
+ class CollectingSettlementItemKeyConverter : BackendIdConverter {
+
+     override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+         if (id == null) return null
+
+         val parts = id.split("_")
+         return CollectingSettlementItemKey(parts[0].toInt(), parts[1].toLong())
+     }
+
+     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+         val id: CollectingSettlementItemKey = source as CollectingSettlementItemKey
+         return String.format("%s_%s", id.settlement, id.order)
+     }
+
+     override fun supports(type: Class<*>): Boolean {
+         return CollectingSettlementItem::class.java == type
+     }
+ }
+
+
+ @Component
+ class PaymentSettlementItemKeyConverter : BackendIdConverter {
+
+     override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+         if (id == null) return null
+
+         val parts = id.split("_")
+         return PaymentSettlementItemKey(parts[0].toInt(), parts[1].toInt())
+     }
+
+     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+         val id: PaymentSettlementItemKey = source as PaymentSettlementItemKey
+         return String.format("%s_%s", id.settlement, id.order)
+     }
+
+     override fun supports(type: Class<*>): Boolean {
+         return PaymentSettlementItem::class.java == type
      }
  }
 //endregion

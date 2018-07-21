@@ -121,6 +121,58 @@ class RepoChangingController {
 
         return true
     }
+
+
+    /**
+     * confirm payment settlement
+     */
+    @RequiresPermissions("accounting:settlement")
+    @PatchMapping("/payment/{id}/confirm")
+    @Transactional
+    fun confirmPaymentSettlement(@PathVariable(value = "id") id: Int): Boolean {
+        /*
+         update payment settlement status to 1 (confirmed)
+         update status of orders included in this settlement to 3 (settled)
+        */
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        entityManager.createNativeQuery("update payment_settlement " +
+                "set status = 1, confirmed_by=${user.id}, confirmed_date=now() " +
+                "where id = $id")
+                .executeUpdate()
+
+        entityManager.createNativeQuery("update purchasing_order set status = 3 " +
+                "where id in (select order_id from payment_settlement_item where settlement_id = $id)")
+                .executeUpdate()
+
+        return true
+    }
+
+
+    /**
+     * confirm collecting settlement
+     */
+    @RequiresPermissions("accounting:settlement")
+    @PatchMapping("/collecting/{id}/confirm")
+    @Transactional
+    fun confirmCollectingSettlement(@PathVariable(value = "id") id: Int): Boolean {
+        /*
+         update collecting settlement status to 1 (confirmed)
+         update status of orders included in this settlement to 3 (settled)
+        */
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        entityManager.createNativeQuery("update collecting_settlement " +
+                "set status = 1, confirmed_by=${user.id}, confirmed_date=now() " +
+                "where id = $id")
+                .executeUpdate()
+
+        entityManager.createNativeQuery("update `order` set status = 3 " +
+                "where id in (select order_id from collecting_settlement_item where settlement_id = $id)")
+                .executeUpdate()
+
+        return true
+    }
 }
 
 data class ApplyStockChanging(
