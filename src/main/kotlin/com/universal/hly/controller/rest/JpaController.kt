@@ -5,6 +5,7 @@ import com.universal.hly.dao.RepoHistoryRepository
 import com.universal.hly.dao.RepoRepository
 import com.universal.hly.dao.UserRepository
 import com.universal.hly.model.Inventory
+import com.universal.hly.model.PaymentSettlement
 import com.universal.hly.model.User
 import org.apache.shiro.SecurityUtils
 import org.apache.shiro.authz.annotation.RequiresPermissions
@@ -142,6 +143,33 @@ class RepoChangingController {
                 .executeUpdate()
 
         entityManager.createNativeQuery("update purchasing_order set status = 3 " +
+                "where id in (select order_id from payment_settlement_item where settlement_id = $id)")
+                .executeUpdate()
+
+        return true
+    }
+
+
+    /**
+     * finish payment settlement
+     */
+    @RequiresPermissions("accounting:settlement")
+    @PatchMapping("/payment/{id}/finish")
+    @Transactional
+    fun finishPaymentSettlement(@PathVariable(value = "id") id: Int, @RequestBody data: PaymentSettlement): Boolean {
+        /*
+         update payment settlement status to 2 (processed)
+         update paid_value
+         update status of orders included in this settlement to 4 (paid)
+        */
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        entityManager.createNativeQuery("update payment_settlement " +
+                "set status = 2, paid_by=${user.id}, paid_date=now() " +
+                "where id = $id")
+                .executeUpdate()
+
+        entityManager.createNativeQuery("update purchasing_order set status = 4 " +
                 "where id in (select order_id from payment_settlement_item where settlement_id = $id)")
                 .executeUpdate()
 

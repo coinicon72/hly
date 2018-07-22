@@ -6,6 +6,7 @@ import org.hibernate.annotations.NaturalId
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
 import org.springframework.data.rest.core.config.Projection
+import org.springframework.format.annotation.DateTimeFormat
 import java.io.Serializable
 import java.util.*
 import javax.persistence.*
@@ -557,6 +558,8 @@ data class PurchasingOrder(
 
         val vat: Float = 0f,
 
+        val value: Float = 0f,
+
         @ManyToOne
         val supplier: Client? = null,
 
@@ -1036,6 +1039,11 @@ data class Privilege(
 )
 
 
+//update collecting_settlement s set value= (
+//select round(sum(o.value), 2) from `order` o join collecting_settlement_item si on o.id = si.order_id group by si.settlement_id having si.settlement_id = s.id);
+//
+//select si.settlement_id, round(sum(o.value), 2) from `order` o join collecting_settlement_item si on o.id = si.order_id group by si.settlement_id;
+
 @Entity
 data class CollectingSettlement(
         @Id
@@ -1054,6 +1062,17 @@ data class CollectingSettlement(
         val confirmedBy: User? = null,
 
         val confirmedDate: Date? = null,
+
+        @ManyToOne
+        @JoinColumn(name = "paid_by")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val collectedBy: User? = null,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val collectedDate: Date? = null,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val collectedValue: Float? = null,
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
@@ -1075,6 +1094,14 @@ interface CollectingSettlementProjection {
     fun getConfirmedBy(): User?
 
     fun getConfirmedDate(): Date?
+
+    fun getValue(): Float
+
+    fun getCollectedBy(): User?
+
+    fun getCollectedDate(): Date?
+
+    fun getCollectedValue(): Float?
 
     fun getComment(): String?
 
@@ -1110,6 +1137,11 @@ interface CollectingSettlementItemProjection {
 }
 
 
+//update payment_settlement s set value= (
+//select round(sum(o.value), 2) from `purchasing_order` o join payment_settlement_item si on o.id = si.order_id group by si.settlement_id having si.settlement_id = s.id);
+//
+//select si.settlement_id, round(sum(o.value), 2) from `purchasing_order` o join payment_settlement_item si on o.id = si.order_id group by si.settlement_id;
+
 @Entity
 data class PaymentSettlement(
         @Id
@@ -1121,13 +1153,28 @@ data class PaymentSettlement(
 
         val createDate: Date = Date(),
 
+        val value: Float = 0f,
+
         val status: Int = 0,
 
         @ManyToOne
         @JoinColumn(name = "confirmed_by")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         val confirmedBy: User? = null,
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         val confirmedDate: Date? = null,
+
+        @ManyToOne
+        @JoinColumn(name = "paid_by")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val paidBy: User? = null,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val paidDate: Date? = null,
+
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        val paidValue: Float? = null,
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
@@ -1151,6 +1198,14 @@ interface PaymentSettlementProjection {
     fun getConfirmedDate(): Date?
 
     fun getComment(): String?
+
+    fun getValue(): Float
+
+    fun getPaidBy(): User?
+
+    fun getPaidDate(): Date?
+
+    fun getPaidValue(): Float?
 
 //    fun getItems(): List<CollectingSettlementItem>
 }
