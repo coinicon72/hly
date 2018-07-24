@@ -4,6 +4,7 @@ import com.universal.hly.dao.InventoryRepository
 import com.universal.hly.dao.RepoHistoryRepository
 import com.universal.hly.dao.RepoRepository
 import com.universal.hly.dao.UserRepository
+import com.universal.hly.model.CollectingSettlement
 import com.universal.hly.model.Inventory
 import com.universal.hly.model.PaymentSettlement
 import com.universal.hly.model.User
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.security.InvalidParameterException
 import java.sql.SQLException
 import javax.persistence.EntityManager
 import javax.transaction.Transactional
@@ -162,10 +164,12 @@ class RepoChangingController {
          update paid_value
          update status of orders included in this settlement to 4 (paid)
         */
+        data.paidValue ?: throw InvalidParameterException("paidValue must not be null")
+
         val user: User = SecurityUtils.getSubject().principal as User
 
         entityManager.createNativeQuery("update payment_settlement " +
-                "set status = 2, paid_by=${user.id}, paid_date=now() " +
+                "set status = 2, paid_by=${user.id}, paid_date=now(), paid_value=${data.paidValue} " +
                 "where id = $id")
                 .executeUpdate()
 
@@ -196,6 +200,35 @@ class RepoChangingController {
                 .executeUpdate()
 
         entityManager.createNativeQuery("update `order` set status = 3 " +
+                "where id in (select order_id from collecting_settlement_item where settlement_id = $id)")
+                .executeUpdate()
+
+        return true
+    }
+
+
+    /**
+     * finish payment settlement
+     */
+    @RequiresPermissions("accounting:settlement")
+    @PatchMapping("/collecting/{id}/finish")
+    @Transactional
+    fun finishCollectingSettlement(@PathVariable(value = "id") id: Int, @RequestBody data: CollectingSettlement): Boolean {
+        /*
+         update payment settlement status to 2 (processed)
+         update paid_value
+         update status of orders included in this settlement to 4 (paid)
+        */
+        data.collectedValue ?: throw InvalidParameterException("collectedValue must not be null")
+
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        entityManager.createNativeQuery("update collecting_settlement " +
+                "set status = 2, collected_by=${user.id}, collected_date=now(), collected_value=${data.collectedValue} " +
+                "where id = $id")
+                .executeUpdate()
+
+        entityManager.createNativeQuery("update `order` set status = 4 " +
                 "where id in (select order_id from collecting_settlement_item where settlement_id = $id)")
                 .executeUpdate()
 

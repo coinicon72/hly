@@ -1055,6 +1055,8 @@ data class CollectingSettlement(
 
         val createDate: Date = Date(),
 
+        val value: Float = 0f,
+
         val status: Int = 0,
 
         @ManyToOne
@@ -1064,7 +1066,7 @@ data class CollectingSettlement(
         val confirmedDate: Date? = null,
 
         @ManyToOne
-        @JoinColumn(name = "paid_by")
+        @JoinColumn(name = "collected_by")
         @JsonInclude(JsonInclude.Include.NON_NULL)
         val collectedBy: User? = null,
 
