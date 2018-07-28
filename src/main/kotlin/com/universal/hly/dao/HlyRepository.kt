@@ -68,8 +68,10 @@ interface ClientTypeRepository : MyBaseRepository<ClientType, Long> {
 interface ClientRepository : MyBaseRepository<Client, Long>, ClientRepositoryCustom {
     fun findByName(@Param("name") name: String): List<Client>
 
+    @Query("select * from client where payment_policy is not null and payment_policy <> ''", nativeQuery = true)
     fun findByPaymentPolicyIsNotNull(): List<Client>
 
+    @Query("select * from client where collecting_policy is not null and collecting_policy <> ''", nativeQuery = true)
     fun findByCollectingPolicyIsNotNull(): List<Client>
 }
 
@@ -429,6 +431,28 @@ class BomItemKeyConverter : BackendIdConverter {
         return BomItem::class.java == type
     }
 }
+
+
+@Component
+class RepoItemKeyConverter : BackendIdConverter {
+
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
+
+        val parts = id.split("_")
+        return RepoItemKey(parts[0].toInt(), parts[1].toLong())
+    }
+
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: RepoItemKey = source as RepoItemKey
+        return String.format("%s_%s", id.repo, id.material)
+    }
+
+    override fun supports(type: Class<*>): Boolean {
+        return RepoItem::class.java == type
+    }
+}
+
 
 @Component
 class RepoHistoryKeyConverter : BackendIdConverter {

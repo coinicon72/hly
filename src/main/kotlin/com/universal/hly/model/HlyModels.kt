@@ -638,7 +638,9 @@ data class RepoItem(
 
         var quantity: Float? = null,
 
-        var price: Float? = null
+        var price: Float? = null,
+
+        val place: String? = null
 )
 
 @Embeddable
