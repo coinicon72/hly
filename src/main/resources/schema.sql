@@ -190,6 +190,7 @@
 --  `material_id` bigint(20) NOT NULL,
 --  `quantity` float UNSIGNED NOT NULL,
 --  `price` float UNSIGNED NOT NULL,
+--  `place` varchar(200) null,
 --  PRIMARY KEY (`repo_id`, `material_id`),
 --  CONSTRAINT `fk_repo_item_repo` FOREIGN KEY (`repo_id`) REFERENCES `repo` (`id`)
 --  CONSTRAINT `fk_repo_item_material` FOREIGN KEY (`material_id`) REFERENCES `material` (`id`)

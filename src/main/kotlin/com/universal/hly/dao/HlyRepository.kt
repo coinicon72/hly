@@ -352,6 +352,12 @@ interface UserRepository : MyBaseRepository<User, Int> {
 interface CollectingSettlementRepository : MyBaseRepository<CollectingSettlement, Int> {
     fun findByStatus(status: Int): List<CollectingSettlement>
     fun findByStatusLessThan(status: Int): List<CollectingSettlement>
+
+    fun findByStatusAndConfirmedDateBetween(status: Int,
+                                            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                            from: Date,
+                                            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                            to: Date): List<CollectingSettlement>
 }
 
 @RepositoryRestResource(excerptProjection = CollectingSettlementItemProjection::class)
@@ -363,6 +369,14 @@ interface CollectingSettlementItemRepository : MyBaseRepository<CollectingSettle
 interface PaymentSettlementRepository : MyBaseRepository<PaymentSettlement, Int> {
     fun findByStatus(status: Int): List<PaymentSettlement>
     fun findByStatusLessThan(status: Int): List<PaymentSettlement>
+
+    fun findByStatusAndConfirmedDateBetween(status: Int,
+                                            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                            from: Date,
+                                            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                            to: Date): List<PaymentSettlement>
+
+//    fun listPaidDetails(from: Date, to: Date): List<PaymentDetail>
 }
 
 @RepositoryRestResource(excerptProjection = PaymentSettlementItemProjection::class)

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import java.util.*
 import javax.servlet.http.HttpServletResponse
 import javax.transaction.Transactional
@@ -49,6 +50,12 @@ class ExportController {
 
     @Autowired
     var bomRepository: BomRepository? = null
+
+    @Autowired
+    lateinit var collectingSettlementRepository: CollectingSettlementRepository
+
+    @Autowired
+    lateinit var paymentSettlementRepository: PaymentSettlementRepository
 
 //    @Autowired
 //    var orderService : OrderService? = null
@@ -131,6 +138,34 @@ class ExportController {
         val template = freeMarkerConfiguration?.getTemplate(templateName)
         template?.process(model, response.writer)
         response.flushBuffer()
+    }
+
+
+    @GetMapping(value = ["/collectingSettlements"])
+    fun exportCollectingSettlements(response: HttpServletResponse,
+                                 @RequestParam(name = "from", required = true) from: Date,
+                                 @RequestParam(name = "to", required = true) to: Date
+                                 ) {
+        val payments = collectingSettlementRepository.findByStatusAndConfirmedDateBetween(2, from, to)
+
+        val model = HashMap<String, Any>()
+        model["payments"] = payments
+
+        exportExcel(response, "materials.ftl", "payments.xls", model)
+    }
+
+
+    @GetMapping(value = ["/paymentSettlements"])
+    fun exportPaymentSettlements(response: HttpServletResponse,
+                                 @RequestParam(name = "from", required = true) from: Date,
+                                 @RequestParam(name = "to", required = true) to: Date
+                                 ) {
+        val payments = paymentSettlementRepository.findByStatusAndConfirmedDateBetween(2, from, to)
+
+        val model = HashMap<String, Any>()
+        model["payments"] = payments
+
+        exportExcel(response, "materials.ftl", "payments.xls", model)
     }
 }
 

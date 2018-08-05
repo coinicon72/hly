@@ -11,17 +11,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
  * Created by swm on 2018-4-14
  */
 @Configuration
-//class CorsConfig : WebMvcConfigurerAdapter() {
-//    override fun addCorsMappings(registry: CorsRegistry) {
-//        registry.addMapping("/api/**")//.allowedOrigins("*");
-//                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD")
-//    }
-//}
 class CorsConfig : WebMvcConfigurer {
     override fun addCorsMappings(registry: CorsRegistry) {
-        registry.addMapping("/api/**")//.allowedOrigins("*");
+        registry.addMapping("/api/**")
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD")
-                .allowedOrigins("*")
+//                .allowedOrigins("*")
     }
 }
 
