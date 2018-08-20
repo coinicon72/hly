@@ -103,11 +103,11 @@ fun verifyJWT(token: String, uid: Int, secret: String): Boolean {
  * @return token中包含的用户名
  */
 fun getUserIdFromJWT(token: String): Int? {
-    try {
+    return try {
         val jwt = JWT.decode(token)
-        return jwt.getClaim(UID_CLAIM).asInt()
+        jwt.getClaim(UID_CLAIM).asInt()
     } catch (e: JWTDecodeException) {
-        return null
+        null
     }
 }
 

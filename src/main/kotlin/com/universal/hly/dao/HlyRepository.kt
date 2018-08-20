@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.universal.hly.dao
 
 import com.universal.hly.model.*
@@ -112,8 +114,7 @@ interface OrderRepository : MyBaseRepository<Order, Long> {
 
 @RequiresPermissions(value = ["sales:order:read"])
 @RepositoryRestResource(excerptProjection = InlineOrderAndProductType::class)
-interface OrderItemRepository : MyBaseRepository<OrderItem, OrderItemKey> {
-}
+interface OrderItemRepository : MyBaseRepository<OrderItem, OrderItemKey>
 
 @RequiresPermissions(value = ["production:product:read"])
 interface ProductRepository : MyBaseRepository<Product, Long> {
@@ -181,6 +182,14 @@ interface MaterialTypeRepository : MyBaseRepository<MaterialType, Long> {
 }
 
 
+@RequiresPermissions(value = ["production:schedule:read"])
+//@RepositoryRestResource(excerptProjection = InlineOrderItemAndFormulaType::class)
+interface ProducingScheduleRepository : MyBaseRepository<ProducingSchedule, ProducingScheduleKey> {
+//    @Query("select * from bom b join order_item oi on b.order_id = oi.order_id and b.product_id = oi.product_id where oi.order_id = ?1", nativeQuery = true)
+    fun findByOrder(id: Long): List<ProducingSchedule>
+}
+
+
 @RequiresPermissions(value = ["production:bom:read"])
 @RepositoryRestResource(excerptProjection = InlineOrderItemAndFormulaType::class)
 interface BomRepository : MyBaseRepository<Bom, Long> {
@@ -190,8 +199,7 @@ interface BomRepository : MyBaseRepository<Bom, Long> {
 
 
 @RequiresPermissions(value = ["production:bom:read"])
-interface BomItemRepository : MyBaseRepository<BomItem, BomItemKey> {
-}
+interface BomItemRepository : MyBaseRepository<BomItem, BomItemKey>
 
 
 @RequiresPermissions(value = ["system:basic-data:read"])
@@ -217,19 +225,16 @@ interface PurchasingOrderRepository : MyBaseRepository<PurchasingOrder, Int> {
 
 
 @RequiresPermissions(value = ["purchasing:plan:read"])
-interface PurchasingOrderItemRepository : MyBaseRepository<PurchasingOrderItem, PurchasingOrderItemKey> {
-}
+interface PurchasingOrderItemRepository : MyBaseRepository<PurchasingOrderItem, PurchasingOrderItemKey>
 
 
 @RequiresPermissions(value = ["repo:inventory:read"])
 // POST: {"comment": "test again"}
-interface InventoryRepository : MyBaseRepository<Inventory, Int> {
-}
+interface InventoryRepository : MyBaseRepository<Inventory, Int>
 
 @RequiresPermissions(value = ["repo:inventory:read"])
 // POST {"id": {"inventory": 0, "material": 0}, "inventory": {"id":2}, "material": {"id":5}, "quantity": 1.3, "price": 4.4}
-interface RepoHistoryRepository : MyBaseRepository<RepoHistory, RepoHistoryKey> {
-}
+interface RepoHistoryRepository : MyBaseRepository<RepoHistory, RepoHistoryKey>
 
 @RequiresPermissions(value = ["system:basic-data:read"])
 interface RepoChangingReasonRepository : MyBaseRepository<RepoChangingReason, Int> {
@@ -264,8 +269,7 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
 
 @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
 // POST {"id": {"repoChanging": 0, "material": 0}, "repoChanging": {"id":1}, "material": {"id":6}, "quantity": -1.3, "price": 4.4}
-interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, RepoChangingItemKey> {
-}
+interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, RepoChangingItemKey>
 
 
 @RequiresPermissions(value = ["system:user-management:read"])
@@ -300,12 +304,10 @@ interface RoleRepository : MyBaseRepository<Role, Int> {
 
 
 @RequiresPermissions(value = ["system:user-management:read"])
-interface PrivilegeRepository : MyBaseRepository<Privilege, Int> {
-}
+interface PrivilegeRepository : MyBaseRepository<Privilege, Int>
 
 @RequiresPermissions(value = ["system:basic-data:read"])
-interface OrganizationRepository : MyBaseRepository<Organization, Int> {
-}
+interface OrganizationRepository : MyBaseRepository<Organization, Int>
 
 @RequiresPermissions(value = ["system:user-management:read"])
 interface UserRepository : MyBaseRepository<User, Int> {
@@ -361,8 +363,7 @@ interface CollectingSettlementRepository : MyBaseRepository<CollectingSettlement
 }
 
 @RepositoryRestResource(excerptProjection = CollectingSettlementItemProjection::class)
-interface CollectingSettlementItemRepository : MyBaseRepository<CollectingSettlementItem, CollectingSettlementItemKey> {
-}
+interface CollectingSettlementItemRepository : MyBaseRepository<CollectingSettlementItem, CollectingSettlementItemKey>
 
 
 @RepositoryRestResource(excerptProjection = PaymentSettlementProjection::class)
@@ -380,8 +381,7 @@ interface PaymentSettlementRepository : MyBaseRepository<PaymentSettlement, Int>
 }
 
 @RepositoryRestResource(excerptProjection = PaymentSettlementItemProjection::class)
-interface PaymentSettlementItemRepository : MyBaseRepository<PaymentSettlementItem, PaymentSettlementItemKey> {
-}
+interface PaymentSettlementItemRepository : MyBaseRepository<PaymentSettlementItem, PaymentSettlementItemKey>
 
 
 // ==============================================================
@@ -423,6 +423,26 @@ class OrderItemKeyConverter : BackendIdConverter {
 
     override fun supports(type: Class<*>): Boolean {
         return OrderItem::class.java == type
+    }
+}
+
+@Component
+class ProducingScheduleKeyConverter : BackendIdConverter {
+
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
+
+        val parts = id.split("_")
+        return ProducingScheduleKey(parts[0].toLong(), parts[1].toLong())
+    }
+
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: ProducingScheduleKey = source as ProducingScheduleKey
+        return String.format("%s_%s", id.order, id.product)
+    }
+
+    override fun supports(type: Class<*>): Boolean {
+        return ProducingSchedule::class.java == type
     }
 }
 

@@ -88,9 +88,11 @@ class UserService {
         if (user.password == null)
             throw AuthenticationException("Username or password error")
 
+        // call following two to load data
         user.roles.size
         user.roles.forEach { it.privileges.size }
 
+        //
         try {
 //            if (!verifyJWT(token, uid, user.password)) {
 //                throw AuthenticationException("Username or password error")

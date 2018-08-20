@@ -1,5 +1,8 @@
+@file:Suppress("unused")
+
 package com.universal.hly.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import org.hibernate.annotations.NaturalId
@@ -137,9 +140,13 @@ data class Order(
         val client: Client? = null,
 
         @Column(nullable = false)
+        @Temporal(TemporalType.DATE)
+        @JsonFormat(pattern = "yyyy-MM-dd")
         val orderDate: Date = Date(),
 
         @Column(nullable = false)
+        @Temporal(TemporalType.DATE)
+        @JsonFormat(pattern = "yyyy-MM-dd")
         val deliveryDate: Date = Date(),
 
         @OneToMany(mappedBy = "order")
@@ -422,9 +429,9 @@ data class FormulaItemKey(
 //) : Serializable
 
 
-interface InlineMaterial {
-
-}
+//interface InlineMaterial {
+//
+//}
 
 @Entity
 data class Material(
@@ -433,7 +440,7 @@ data class Material(
         val id: Long? = null,
 
         @NaturalId
-        @Column(length = 20)//, unique = true, nullable = false)
+        @Column(length = 20)
         val code: String = "",
 
         @Column(nullable = false, length = 50)
@@ -480,6 +487,42 @@ data class MaterialType(
         @Column(nullable = false, length = 50)
         val name: String = ""
 )
+
+
+@Entity
+data class ProducingSchedule(
+//        @Id
+//        @GeneratedValue(strategy = GenerationType.IDENTITY)
+//        val id: Long = 0,
+        @EmbeddedId
+        val id: ProducingScheduleKey,
+
+        @MapsId("order")
+        @ManyToOne(fetch = FetchType.EAGER)
+        @JoinColumn()//foreignKey = ForeignKey(name = "fk_order_item_order"))
+        val order: Order,
+
+        @MapsId("product")
+        @ManyToOne(fetch = FetchType.EAGER)
+        @JoinColumn()//foreignKey = ForeignKey(name = "fk_order_item_product"))
+        val product: Product,
+
+        @Column(nullable = false)
+        val scheduleDate: Date = Date(),
+
+        @Column()
+        val producingDate: Date?,
+
+        @Column()
+        val line: String?
+)
+
+
+@Embeddable
+data class ProducingScheduleKey(
+        val order: Long,
+        val product: Long
+) : Serializable
 
 
 @Entity
