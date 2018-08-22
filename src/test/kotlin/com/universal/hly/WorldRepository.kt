@@ -44,7 +44,7 @@ class TestJpa {
 
         val u2 = userRepository.findById(20).get()
         Assert.assertNotNull(u2)
-        Assert.assertEquals(u2?.name, "陈锦海")
+        Assert.assertEquals(u2.name, "陈锦海")
 
         val u3 = userRepository.getByPhone("15917885784")
         Assert.assertNotNull(u3)

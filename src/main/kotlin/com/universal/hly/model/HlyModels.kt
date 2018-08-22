@@ -506,6 +506,12 @@ data class ProducingSchedule(
         @ManyToOne(fetch = FetchType.EAGER)
         @JoinColumn()//foreignKey = ForeignKey(name = "fk_order_item_product"))
         val product: Product,
+//        @OneToOne(fetch = FetchType.EAGER)
+//        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id",
+//                foreignKey = ForeignKey(name = "fk_order_item_order")),
+//                JoinColumn(name = "product_id", referencedColumnName = "product_id"),
+//                foreignKey = ForeignKey(name = "fk_order_item_product"))
+//        val orderItem: OrderItem? = null,
 
         @Column(nullable = false)
         val scheduleDate: Date = Date(),
@@ -530,6 +536,8 @@ data class Bom(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Long = 0,
+//        @EmbeddedId
+//        val id: BomKey,
 
 //       @Id
         @OneToOne(fetch = FetchType.EAGER)
@@ -549,6 +557,12 @@ data class Bom(
         @OneToMany(mappedBy = "bom")
         val items: List<BomItem> = LinkedList()
 )
+
+@Embeddable
+data class BomKey(
+        val order: Long,
+        val product: Long
+) : Serializable
 
 
 @Projection(name = "InlineOrderItemAndFormulaType", types = [Bom::class])
@@ -807,6 +821,9 @@ data class RepoChanging(
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Int,
 
+        @NaturalId
+        val no: String? = null,
+
         @ManyToOne(fetch = FetchType.EAGER)
         val repo: Repo? = null,
 
@@ -858,6 +875,7 @@ data class RepoChanging(
 @Projection(name = "InlineRepoChanging", types = [RepoChanging::class])
 interface InlineRepoChanging {
     fun getId(): Int
+    fun getNo(): String?
     fun getRepo(): Repo?
     fun getType(): Int
     fun getStatus(): Int
@@ -884,7 +902,7 @@ data class RepoChangingItem(
 
         @MapsId(value = "repoChanging")
         @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_changing_item_repo_changing"))
+        @JoinColumn(referencedColumnName = "id", foreignKey = ForeignKey(name = "fk_repo_changing_item_repo_changing"))
         val repoChanging: RepoChanging,
 
         @MapsId(value = "material")

@@ -192,7 +192,7 @@ interface ProducingScheduleRepository : MyBaseRepository<ProducingSchedule, Prod
 
 @RequiresPermissions(value = ["production:bom:read"])
 @RepositoryRestResource(excerptProjection = InlineOrderItemAndFormulaType::class)
-interface BomRepository : MyBaseRepository<Bom, Long> {
+interface BomRepository : MyBaseRepository<Bom, Long> {//BomKey> {
     @Query("select * from bom b join order_item oi on b.order_id = oi.order_id and b.product_id = oi.product_id where oi.order_id = ?1", nativeQuery = true)
     fun findByOrderId(@Param("oid") oid: Long): List<Bom>
 }
@@ -445,6 +445,26 @@ class ProducingScheduleKeyConverter : BackendIdConverter {
         return ProducingSchedule::class.java == type
     }
 }
+
+//@Component
+//class BomKeyConverter : BackendIdConverter {
+//
+//    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+//        if (id == null) return null
+//
+//        val parts = id.split("_")
+//        return BomKey(parts[0].toLong(), parts[1].toLong())
+//    }
+//
+//    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+//        val id: BomKey = source as BomKey
+//        return String.format("%s_%s", id.order, id.product)
+//    }
+//
+//    override fun supports(type: Class<*>): Boolean {
+//        return Bom::class.java == type
+//    }
+//}
 
 @Component
 class BomItemKeyConverter : BackendIdConverter {
