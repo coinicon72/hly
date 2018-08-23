@@ -229,8 +229,13 @@ data class OrderItemKey(
 @Table(uniqueConstraints = [(UniqueConstraint(name = "uk_product_code", columnNames = ["code"]))])
 data class Product(
         @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
+//        @GeneratedValue()
         val id: Long? = null,
+
+        @OneToOne
+//        @JoinColumn(name = "id")
+        @PrimaryKeyJoinColumn(name = "id")
+        val material: Material? = null,
 
 //        @NaturalId
         @Column(nullable = false, length = 20)
@@ -462,7 +467,10 @@ data class Material(
         val comment: String? = null,
 
         @Column(length = 500)
-        val metadata: String? = null
+        val metadata: String? = null,
+
+        @OneToOne(mappedBy = "material")
+        val product: Product? = null
 ) : Serializable
 
 @Projection(name = "InlineMaterialType", types = [Material::class])
@@ -470,6 +478,7 @@ interface InlineMaterialType {
     fun getId(): Long
     fun getCode(): String
     fun getName(): String
+    fun getCategory(): Int
     fun getType(): MaterialType
     fun getSafeQuantity(): Float
     fun getSpec(): String

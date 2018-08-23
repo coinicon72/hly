@@ -23,8 +23,8 @@ buildscript {
     }
 
     repositories {
-        jcenter()
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
@@ -36,8 +36,8 @@ buildscript {
 }
 
 repositories {
-    jcenter()
     mavenCentral()
+    jcenter()
 }
 
 dependencies {

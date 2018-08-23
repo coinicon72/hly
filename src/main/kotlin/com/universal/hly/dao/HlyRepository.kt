@@ -160,7 +160,7 @@ interface MaterialTypeRepository : MyBaseRepository<MaterialType, Long> {
     override fun deleteInBatch(entities: MutableIterable<MaterialType>?)
 
     @RequiresPermissions(value = ["system:basic-data:write"])
-    override fun deleteById(id: Long?)
+    override fun deleteById(id: Long)
 
     @RequiresPermissions(value = ["system:basic-data:write"])
     override fun deleteAllInBatch()
@@ -179,6 +179,8 @@ interface MaterialTypeRepository : MyBaseRepository<MaterialType, Long> {
 
     @RequiresPermissions(value = ["system:basic-data:write"])
     override fun delete(entity: MaterialType?)
+
+    fun findByIdGreaterThan(id: Long): List<MaterialType>
 }
 
 
