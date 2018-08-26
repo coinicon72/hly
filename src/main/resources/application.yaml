@@ -27,9 +27,11 @@ spring:
     password: hly
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+#  https://docs.spring.io/spring-data/rest/docs/current/reference/html/#_changing_other_spring_data_rest_properties
   data:
     rest:
       basePath: /api/data
+      defaultPageSize: 200
 
   freemarker:
     cache: false

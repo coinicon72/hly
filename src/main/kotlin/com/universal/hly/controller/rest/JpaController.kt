@@ -1,13 +1,9 @@
+@file:Suppress("unused")
+
 package com.universal.hly.controller.rest
 
-import com.universal.hly.dao.InventoryRepository
-import com.universal.hly.dao.RepoHistoryRepository
-import com.universal.hly.dao.RepoRepository
-import com.universal.hly.dao.UserRepository
-import com.universal.hly.model.CollectingSettlement
-import com.universal.hly.model.Inventory
-import com.universal.hly.model.PaymentSettlement
-import com.universal.hly.model.User
+import com.universal.hly.dao.*
+import com.universal.hly.model.*
 import org.apache.shiro.SecurityUtils
 import org.apache.shiro.authz.annotation.RequiresPermissions
 import org.springframework.beans.factory.annotation.Autowired
@@ -57,6 +53,16 @@ class RepoChangingController {
 
     @Autowired
     lateinit var repoHistoryRepository: RepoHistoryRepository
+
+    @Autowired
+    lateinit var deliverySheetRepository: DeliverySheetRepository
+
+//    @Autowired
+//    lateinit var orderRepository: OrderRepository
+//
+//    @Autowired
+//    lateinit var productRepository: ProductRepository
+
 
     @GetMapping("/previewStockIn/{cid}")
 //    @RequiresPermissions("document:read")
@@ -233,6 +239,44 @@ class RepoChangingController {
                 .executeUpdate()
 
         return true
+    }
+
+
+    /**
+     * finish payment settlement
+     */
+    // FIXME no authority required
+//    @RequiresPermissions("accounting:settlement")
+    @GetMapping("/deliverySheet")
+//    @Transactional
+    fun listDeliverySheet(): List<DeliverySheet> {
+        val sheets = deliverySheetRepository.findAll()
+        sheets.forEach {
+            it.items.clear()
+            it.order?.client?.orders?.clear()
+            it.order?.items?.clear()
+        }
+
+        return sheets
+    }
+
+
+    /**
+     * finish payment settlement
+     */
+    // FIXME no authority required
+//    @RequiresPermissions("accounting:settlement")
+    @GetMapping("/order/{id}/deliverySheet")
+//    @Transactional
+    fun listDeliverySheetByOrder(@PathVariable(value = "id") id: Long): List<DeliverySheet> {
+        val sheets = deliverySheetRepository.findByOrderId(id)
+        sheets.forEach {
+            it.items.clear()
+            it.order?.client?.orders?.clear()
+            it.order?.items?.clear()
+        }
+
+        return sheets
     }
 }
 

@@ -89,7 +89,7 @@ data class Client(
         @Column(length = 500)
         val metadata: String? = null,
 
-        @OneToMany(mappedBy = "client")//, cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
+        @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)//, cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
         val orders: MutableList<Order> = mutableListOf()
 ) {
     override fun toString(): String {
@@ -154,12 +154,12 @@ data class Order(
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_product"))
 //        val product: Product? = null,
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_details"))
-        val items: List<OrderItem> = LinkedList(),
+        val items: MutableList<OrderItem> = mutableListOf(),
 
         val tax: Boolean = false,
 
         val value: Float = 0f,
-        val actualValue: Float?,
+        val actualValue: Float? = 0f,
 
         val comment: String? = null,
 
@@ -279,6 +279,93 @@ data class Product(
 ////        @JoinColumn(name = "re")
 //        val revisions: List<Formula>
 //)
+
+//CREATE TABLE `delivery_sheet` (
+//`id` bigint(20) NOT NULL AUTO_INCREMENT,
+//`order_id` bigint(20) NOT NULL COMMENT 'order''s id',
+//`delivery_date` datetime NOT NULL,
+//PRIMARY KEY (`id`),
+//KEY `fk_delivery_sheet_order` (`order_id`),
+//CONSTRAINT `fk_delivery_sheet_order` FOREIGN KEY (`order_id`) REFERENCES `order` (`id`)
+//) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+//
+//CREATE TABLE `delivery_sheet_item` (
+//`id` bigint(20) NOT NULL,
+//`order_id` bigint(20) NOT NULL,
+//`product_id` bigint(20) NOT NULL,
+//`quantity` float NOT NULL,
+//`boxes` int(11) NOT NULL DEFAULT '1',
+//`price` float NOT NULL,
+//`comment` varchar(50) DEFAULT NULL,
+//PRIMARY KEY (`id`,`order_id`,`product_id`),
+//KEY `fk_delivery_sheet_item_order_item` (`order_id`,`product_id`),
+//CONSTRAINT `fk_delivery_sheet_item_order_item` FOREIGN KEY (`order_id`, `product_id`) REFERENCES `order_item` (`order_id`, `product_id`) ON UPDATE CASCADE,
+//CONSTRAINT `fk_delivery_sheet_item_sheet` FOREIGN KEY (`id`) REFERENCES `delivery_sheet` (`id`) ON UPDATE CASCADE
+//) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+@Entity
+data class DeliverySheet(
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        val id: Long,
+
+        val no: String? = null,
+
+        @ManyToOne//(fetch = FetchType.EAGER)
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_delivery_sheet_order"))
+        val order: Order? = null,
+
+        @Temporal(TemporalType.DATE)
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        val deliveryDate: Date = Date(),
+
+        @OneToMany(mappedBy = "deliverySheet")
+        val items: MutableList<DeliverySheetItem> = mutableListOf()
+)
+
+@Projection(name = "DeliverySheetWithOrder", types = [DeliverySheet::class])
+interface DeliverySheetWithOrder {
+    fun getId(): Long
+    fun getNo(): String
+    fun getOrder(): Order
+    fun getDeliveryDate(): Date
+}
+
+
+@Entity
+data class DeliverySheetItem(
+        @EmbeddedId
+        val id: DeliverySheetItemKey,
+
+        @MapsId(value = "deliverySheet")
+        @ManyToOne
+//        @JoinColumn(name = "id")
+        val deliverySheet: DeliverySheet? = null,
+
+        @MapsId(value = "orderItem")
+        @ManyToOne
+        // following will cause error: Unable to find column with physical name order_id in table order_item
+        // see: https://stackoverflow.com/a/8630729
+//        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
+//                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
+        @JoinColumns(JoinColumn(name = "order_id"),
+                JoinColumn(name = "product_id"))
+        val orderItem: OrderItem? = null,
+
+        val quantity: Float = 0f,
+        val boxes: Int = 1,
+        val price: Float = 0f,
+
+        val comment: String? = null
+)
+
+// https://stackoverflow.com/questions/31385658/jpa-how-to-make-composite-foreign-key-part-of-composite-primary-key
+@Embeddable
+data class DeliverySheetItemKey(
+        val deliverySheet: Long = 0,
+
+        val orderItem: OrderItemKey
+) : Serializable
 
 
 @Entity
@@ -639,7 +726,7 @@ data class PurchasingOrder(
 
         @OneToMany(mappedBy = "purchasingOrder")
         val items: List<PurchasingOrderItem> = LinkedList()
-): Serializable
+) : Serializable
 
 
 @Entity
@@ -1202,7 +1289,7 @@ data class CollectingSettlementItem(
 class CollectingSettlementItemKey(
         val settlement: Int = 0,
         val order: Long = 0
-): Serializable
+) : Serializable
 
 @Projection(name = "CollectingSettlementItem", types = [CollectingSettlementItem::class])
 interface CollectingSettlementItemProjection {
@@ -1299,13 +1386,13 @@ data class PaymentSettlementItem(
         @ManyToOne
         //        @JoinColumn(name = "order_id")
         val order: PurchasingOrder? = null
-): Serializable
+) : Serializable
 
 @Embeddable
 data class PaymentSettlementItemKey(
         val settlement: Int = 0,
         val order: Int = 0
-): Serializable
+) : Serializable
 
 @Projection(name = "PaymentSettlementItem", types = [PaymentSettlementItem::class])
 interface PaymentSettlementItemProjection {

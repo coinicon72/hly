@@ -121,6 +121,17 @@ interface ProductRepository : MyBaseRepository<Product, Long> {
     fun findByCode(@Param("code") code: String): Optional<Product>
 }
 
+// FIXME no authority required
+//@RepositoryRestResource(excerptProjection = DeliverySheetWithOrder::class)
+interface DeliverySheetRepository : MyBaseRepository<DeliverySheet, Long> {
+    fun findByOrderId(@Param("id") id: Long): List<DeliverySheet>
+}
+
+// FIXME no authority required
+interface DeliverySheetItemRepository : MyBaseRepository<DeliverySheetItem, DeliverySheetItemKey> {
+    fun findByDeliverySheetId(@Param("id") id: Long): List<DeliverySheetItem>
+}
+
 @RequiresPermissions(value = ["production:formula:read"])
 interface ProduceConditionRepository : MyBaseRepository<ProduceCondition, Long> {
     fun findByFormula(@Param("id") id: Long): Optional<ProduceCondition>
@@ -425,6 +436,26 @@ class OrderItemKeyConverter : BackendIdConverter {
 
     override fun supports(type: Class<*>): Boolean {
         return OrderItem::class.java == type
+    }
+}
+
+@Component
+class DeliverySheetItemKeyConverter : BackendIdConverter {
+
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
+
+        val parts = id.split("_")
+        return DeliverySheetItemKey(parts[0].toLong(), OrderItemKey(parts[1].toLong(), parts[2].toLong()))
+    }
+
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: DeliverySheetItemKey = source as DeliverySheetItemKey
+        return String.format("%s_%s_%s", id.deliverySheet, id.orderItem.order, id.orderItem.product)
+    }
+
+    override fun supports(type: Class<*>): Boolean {
+        return DeliverySheetItem::class.java == type
     }
 }
 
