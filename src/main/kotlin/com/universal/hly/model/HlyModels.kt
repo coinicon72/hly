@@ -725,7 +725,11 @@ data class PurchasingOrder(
         val comment: String? = null,
 
         @OneToMany(mappedBy = "purchasingOrder")
-        val items: List<PurchasingOrderItem> = LinkedList()
+        val items: List<PurchasingOrderItem> = LinkedList(),
+
+        // 单向连接至 入库单
+        @OneToOne(mappedBy = "purchasingOrder")
+        val repoChanging: RepoChanging? = null
 ) : Serializable
 
 
@@ -851,7 +855,7 @@ data class RepoChangingReason(
 
         val reason: String? = null,
 
-        val orderRelated: Boolean = false
+        val orderRelated: Int = 0
 )
 
 
@@ -947,7 +951,7 @@ data class RepoChanging(
 //        @Column(name = "reason")
         val reasonDetail: String? = null,
 
-        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+        @OneToOne(optional = true, fetch = FetchType.EAGER)
         val purchasingOrder: PurchasingOrder? = null,
 
         @ManyToOne(optional = true, fetch = FetchType.EAGER)
@@ -980,6 +984,7 @@ interface InlineRepoChanging {
     fun getApplyingDate(): Date?
     fun getReason(): RepoChangingReason
     fun getReasonDetail(): String?
+    fun getPurchasingOrder(): PurchasingOrder?
     fun getOrder(): Order?
     fun getDepartment(): String?
     fun getVat(): Float

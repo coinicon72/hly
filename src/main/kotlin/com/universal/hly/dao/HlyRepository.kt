@@ -234,6 +234,13 @@ interface PurchasingOrderRepository : MyBaseRepository<PurchasingOrder, Int> {
     fun findBySigner(signer: User): List<PurchasingOrder>
 
     fun findBySupplierAndStatus(supplier: Client, status: Int): List<PurchasingOrder>
+
+    fun findByStatus(status: Int): List<PurchasingOrder>
+
+    fun findByStatusIn(status: Collection<Int>): List<PurchasingOrder>
+
+//    @Query("select o from PurchasingOrder o where o.status <= 1")
+//    fun findNotStockIn(): List<PurchasingOrder>
 }
 
 

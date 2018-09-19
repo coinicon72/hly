@@ -30,10 +30,8 @@ class JWTFilter : BasicHttpAuthenticationFilter() {
     @Throws(Exception::class)
     override fun executeLogin(request: ServletRequest, response: ServletResponse): Boolean {
         val httpServletRequest = request as HttpServletRequest
-        var authorization: String? = httpServletRequest.getHeader("Authorization")
-                ?: httpServletRequest.cookies.find { it.name == "token" }?.value
-
-        if (authorization == null) return false
+        val authorization: String = httpServletRequest.getHeader("Authorization")?.substringAfter("Bearer ")
+                ?: httpServletRequest.cookies.find { it.name == "token" }?.value ?: return false
 
         val token = JWTToken(authorization)
 
