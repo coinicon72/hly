@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.security.InvalidParameterException
 import java.sql.SQLException
+import java.util.*
 import javax.persistence.EntityManager
 import javax.transaction.Transactional
 
@@ -243,7 +244,6 @@ class RepoChangingController {
 
 
     /**
-     * finish payment settlement
      */
     // FIXME no authority required
 //    @RequiresPermissions("accounting:settlement")
@@ -255,6 +255,8 @@ class RepoChangingController {
             it.items.clear()
             it.order?.client?.orders?.clear()
             it.order?.items?.clear()
+            it.createdBy?.roles?.clear()
+            it.committedBy?.roles?.clear()
         }
 
         return sheets
@@ -262,7 +264,43 @@ class RepoChangingController {
 
 
     /**
-     * finish payment settlement
+     */
+    // FIXME no authority required
+//    @RequiresPermissions("accounting:settlement")
+    @GetMapping("/deliverySheet/committed")
+//    @Transactional
+    fun listCommittedDeliverySheet(): List<DeliverySheet> {
+        val sheets = deliverySheetRepository.findByStatus(1)
+        sheets.forEach {
+            it.items.clear()
+            it.order?.client?.orders?.clear()
+            it.order?.items?.clear()
+            it.createdBy?.roles?.clear()
+            it.committedBy?.roles?.clear()
+        }
+
+        return sheets
+    }
+
+
+    /**
+     */
+    // FIXME no authority required
+//    @RequiresPermissions("accounting:settlement")
+    @PostMapping("/deliverySheet/{id}/repo")
+    @Transactional
+    fun createRepoChangingForCommittedDeliverySheet(@PathVariable(value = "id") id: Long,
+                                                    @RequestBody data: RepoChanging): Optional<RepoChanging> {
+        val sheet = deliverySheetRepository.findById(id) ?: return Optional.empty()
+
+        val changing = RepoChanging(0, repo = data.repo)
+         entityManager.persist(data)
+
+        return Optional.of(changing)
+    }
+
+
+    /**
      */
     // FIXME no authority required
 //    @RequiresPermissions("accounting:settlement")
@@ -274,10 +312,18 @@ class RepoChangingController {
             it.items.clear()
             it.order?.client?.orders?.clear()
             it.order?.items?.clear()
+            it.createdBy?.roles?.clear()
+            it.committedBy?.roles?.clear()
         }
 
         return sheets
     }
+
+
+//    @PutMapping("/deliverySheet/{id}/commit")
+//    fun commitDeliverySheet(@PathVariable(value = "id") id: Long): DeliverySheet {
+//
+//    }
 }
 
 data class ApplyStockChanging(

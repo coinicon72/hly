@@ -122,9 +122,11 @@ interface ProductRepository : MyBaseRepository<Product, Long> {
 }
 
 // FIXME no authority required
-//@RepositoryRestResource(excerptProjection = DeliverySheetWithOrder::class)
+@RepositoryRestResource(excerptProjection = DeliverySheetWithOrder::class)
 interface DeliverySheetRepository : MyBaseRepository<DeliverySheet, Long> {
     fun findByOrderId(@Param("id") id: Long): List<DeliverySheet>
+
+    fun findByStatus(@Param("status") status: Int): List<DeliverySheet>
 }
 
 // FIXME no authority required

@@ -3,3 +3,5 @@
 build
 doc/hly.pdb
 out
+.DS_Store
+*.iml

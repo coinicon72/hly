@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import org.hibernate.annotations.NaturalId
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
+import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.rest.core.config.Projection
 import org.springframework.format.annotation.DateTimeFormat
 import java.io.Serializable
@@ -319,6 +320,24 @@ data class DeliverySheet(
         @JsonFormat(pattern = "yyyy-MM-dd")
         val deliveryDate: Date = Date(),
 
+        var status: Int = 0,
+
+        @ManyToOne
+        @JoinColumn(name = "created_by")
+        val createdBy: User? = null,
+
+        @Temporal(TemporalType.DATE)
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        val createdOn: Date = Date(),
+
+        @ManyToOne
+        @JoinColumn(name = "committed_by")
+        var committedBy: User? = null,
+
+        @Temporal(TemporalType.DATE)
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        var committedOn: Date? = null,
+
         @OneToMany(mappedBy = "deliverySheet")
         val items: MutableList<DeliverySheetItem> = mutableListOf()
 )
@@ -329,6 +348,13 @@ interface DeliverySheetWithOrder {
     fun getNo(): String
     fun getOrder(): Order
     fun getDeliveryDate(): Date
+    fun getStatus(): Int
+
+    fun getCreatedBy(): User
+    fun getCreatedOn(): Date
+
+    fun getCommittedBy(): User?
+    fun getCommittedOn(): Date?
 }
 
 
@@ -1162,7 +1188,7 @@ data class User(
                 joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
                 inverseJoinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id")]
         )
-        val roles: List<Role> = ArrayList()
+        val roles: MutableList<Role> = mutableListOf()
 )
 
 
