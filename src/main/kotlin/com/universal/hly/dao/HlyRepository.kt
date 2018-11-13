@@ -110,11 +110,29 @@ interface OrderRepository : MyBaseRepository<Order, Long> {
                                                    @Param("date")
                                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
                                                    deliveryDate: Date): List<Order>
+
+    @Query(value = "select d.actual_value, d.value, o.* from `order` o join (" +
+            "select order_id, round(sum(price * quantity), 2) `value`, round(sum(price * actual_quantity), 2) `actual_value` from ( " +
+            "select oi.order_id, oi.product_id, oi.price, oi.quantity, ifnull(sum(dsi.quantity), 0) actual_quantity " +
+            "from delivery_sheet_item dsi right join order_item oi on oi.order_id=dsi.order_id and oi.product_id=dsi.product_id " +
+            "where oi.order_id=:oid " +
+            "group by oi.order_id, oi.product_id, oi.price, oi.quantity " +
+            ") d group by order_id " +
+            ") d on d.order_id=o.id",
+            nativeQuery = true)
+    fun findDeliveredByOrderId(@Param("oid") id: Long): Optional<Order>
 }
 
 @RequiresPermissions(value = ["sales:order:read"])
 @RepositoryRestResource(excerptProjection = InlineOrderAndProductType::class)
-interface OrderItemRepository : MyBaseRepository<OrderItem, OrderItemKey>
+interface OrderItemRepository : MyBaseRepository<OrderItem, OrderItemKey> {
+    @Query(value = "select oi.order_id, oi.product_id, oi.price, oi.quantity, ifnull(sum(dsi.quantity), 0) actual_quantity " +
+            "from delivery_sheet_item dsi right join order_item oi on oi.order_id=dsi.order_id and oi.product_id=dsi.product_id " +
+            "where oi.order_id=:oid " +
+            "group by oi.order_id, oi.product_id, oi.price, oi.quantity",
+            nativeQuery = true)
+    fun findDeliveredByOrderId(@Param("oid") id: Long): List<OrderItem>
+}
 
 @RequiresPermissions(value = ["production:product:read"])
 interface ProductRepository : MyBaseRepository<Product, Long> {
@@ -132,6 +150,9 @@ interface DeliverySheetRepository : MyBaseRepository<DeliverySheet, Long> {
 // FIXME no authority required
 interface DeliverySheetItemRepository : MyBaseRepository<DeliverySheetItem, DeliverySheetItemKey> {
     fun findByDeliverySheetId(@Param("id") id: Long): List<DeliverySheetItem>
+
+    @Query(nativeQuery = true, value = "select dsi.* from delivery_sheet_item dsi where dsi.order_id=:oid")
+    fun findByOrderId(@Param("oid") id: Long): List<DeliverySheetItem>
 }
 
 @RequiresPermissions(value = ["production:formula:read"])
@@ -281,6 +302,13 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
 //    fun findByStatusAndTypeIn(@Param("type") type: List<Int>, @Param("status") status: Int): List<RepoChanging>
     @Query("select * from repo_changing where type <> 0 and status=?1", nativeQuery = true)
     fun findStockInOutByStatus(@Param("status") status: Int): List<RepoChanging>
+
+//    fun findByStatusAndTypeIn(@Param("type") type: List<Int>, @Param("status") status: Int): List<RepoChanging>
+    @Query("select * from repo_changing where type=-1 and order_id=:oid", nativeQuery = true)
+    fun findStockOutByOrderId(@Param("oid") id: Long): List<RepoChanging>
+
+    @Query("select * from repo_changing where type=-1 and order_id=:oid and reason_id=:reason", nativeQuery = true)
+    fun findStockOutByOrderIdAndReasonId(@Param("oid") id: Long, @Param("reason") reason: Int): List<RepoChanging>
 
     @Query(nativeQuery = true, name = "RepoChanging.previewStockOut")
     fun previewStockIn(@Param("cid") cid: Int): List<StockInPreview>

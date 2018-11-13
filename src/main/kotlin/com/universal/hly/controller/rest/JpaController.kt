@@ -12,7 +12,6 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.security.InvalidParameterException
-import java.sql.SQLException
 import java.util.*
 import javax.persistence.EntityManager
 import javax.transaction.Transactional
@@ -58,9 +57,9 @@ class RepoChangingController {
     @Autowired
     lateinit var deliverySheetRepository: DeliverySheetRepository
 
-//    @Autowired
-//    lateinit var orderRepository: OrderRepository
-//
+    @Autowired
+    lateinit var orderRepository: OrderRepository
+
 //    @Autowired
 //    lateinit var productRepository: ProductRepository
 
@@ -320,10 +319,77 @@ class RepoChangingController {
     }
 
 
-//    @PutMapping("/deliverySheet/{id}/commit")
-//    fun commitDeliverySheet(@PathVariable(value = "id") id: Long): DeliverySheet {
-//
-//    }
+    @RequiresPermissions("repo:stock-out")
+    @PostMapping("/deliverySheet/{id}/repoChangingSheet")
+    @Transactional
+    fun createRepoChangingSheet(@PathVariable(value = "id") id: Long,
+                                @RequestBody request: RepoChanging): ResponseEntity<RepoChanging> {
+
+        val result = deliverySheetRepository.findById(id)
+        if (!result.isPresent)
+            return ResponseEntity.notFound().build()
+
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        //
+        val deliverySheet = result.get()
+        deliverySheet.status = 2
+
+        val repoSheet = request.copy(status = 1, type = -1, applicant = user,
+                order = deliverySheet.order, deliverySheet = deliverySheet,
+                createDate = Date(), items = mutableListOf())
+
+        deliverySheet.items.forEach {
+            val repoChangingItem = RepoChangingItem(RepoChangingItemKey(repoSheet.id, it.orderItem?.product?.material?.id!!),
+                    repoChanging = repoSheet, material = it.orderItem.product.material,
+                    quantity = it.quantity)
+            repoSheet.items.add(repoChangingItem)
+//            entityManager.persist(repoChangingItem)
+        }
+
+        with (entityManager) {
+//        entityManager.transaction.begin()
+            persist(repoSheet)
+
+            persist(deliverySheet)
+
+            flush()
+//        entityManager.transaction.commit()
+        }
+
+        //
+//        entityManager.detach(repoSheet)
+////        return ResponseEntity.created(URI("")).build()
+//        with(repoSheet) {
+//            applicant?.roles?.clear()
+//            items.clear()
+//            deliverySheet.items.clear()
+//            order?.client = null
+//        }
+        return ResponseEntity.ok(repoSheet)
+    }
+
+
+    @RequiresPermissions("accounting:settlement")
+    @PostMapping("/collectingSettlement")
+    @Transactional
+    fun createCollectingSettlement(@RequestBody request: CollectingSettlement): ResponseEntity<CollectingSettlement> {
+
+        request.status = 0
+        request.createDate = Date()
+
+        request.items.forEach {
+            it.order = orderRepository.findDeliveredByOrderId(it.id.order).get()
+            it.order?.status = 3
+
+            request.value += it.order?.actualValue!!
+        }
+
+        entityManager.persist(request)
+
+        //
+        return ResponseEntity.ok(request)
+    }
 }
 
 data class ApplyStockChanging(

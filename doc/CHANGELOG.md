@@ -1,7 +1,10 @@
 # v1.0.1 2018-11-04
-+ [ ] [ADD] add ```status``` to delivery-sheet. 0-just created; 1-committed (to repo)
-+ [ ] [ADD] add ```createdBy```, ```createdOn```, ```committedBy```, ```committedOn``` to delivery-sheet
-+ [ ] [ADD] can't commit a committed delivery-sheet
++ [x] [ADD] add ```status``` to delivery-sheet. 0-just created; 1-committed (to repo)
++ [x] [ADD] add ```createdBy```, ```createdOn```, ```committedBy```, ```committedOn``` to delivery-sheet
++ [x] [ADD] can't commit a committed delivery-sheet
+
++ [x] [ADD] 从`发货单`生成`出库单`的接口
++ [x] [ADD] 生成`应收结算单`的接口
 
 
 # 2018-08-24

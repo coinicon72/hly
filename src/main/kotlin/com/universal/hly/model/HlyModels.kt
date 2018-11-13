@@ -2,15 +2,11 @@
 
 package com.universal.hly.model
 
-import com.fasterxml.jackson.annotation.JsonFormat
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.*
 import org.hibernate.annotations.NaturalId
 import org.hibernate.annotations.OnDelete
 import org.hibernate.annotations.OnDeleteAction
-import org.springframework.data.annotation.CreatedBy
 import org.springframework.data.rest.core.config.Projection
-import org.springframework.format.annotation.DateTimeFormat
 import java.io.Serializable
 import java.util.*
 import javax.persistence.*
@@ -91,6 +87,7 @@ data class Client(
         val metadata: String? = null,
 
         @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)//, cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
+        @JsonManagedReference
         val orders: MutableList<Order> = mutableListOf()
 ) {
     override fun toString(): String {
@@ -138,7 +135,8 @@ data class Order(
         @ManyToOne//(fetch = FetchType.EAGER)
 //        @JoinColumn(name = "client", foreignKey = ForeignKey(name = "fk_client_order"))
         @JoinColumn(nullable = false, foreignKey = ForeignKey(name = "fk_client_order"))
-        val client: Client? = null,
+        @JsonBackReference
+        var client: Client? = null,
 
         @Column(nullable = false)
         @Temporal(TemporalType.DATE)
@@ -155,6 +153,7 @@ data class Order(
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_product"))
 //        val product: Product? = null,
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_details"))
+        @JsonManagedReference
         val items: MutableList<OrderItem> = mutableListOf(),
 
         val tax: Boolean = false,
@@ -169,7 +168,7 @@ data class Order(
 
         // 订单状态, 0 = 签订, 1 = 执行中, 2 = 已完成, 3 = 取消
         @Column(nullable = false, columnDefinition = "tinyint default 0")
-        val status: Int = 0
+        var status: Int = 0
 ) {
     override fun toString(): String {
         return "Order(id=$id, no='$no', orderDate=$orderDate, deliveryDate=$deliveryDate, tax=$tax, value=$value, actualValue=$actualValue, comment=$comment, metadata=$metadata, status=$status)"
@@ -188,6 +187,7 @@ data class OrderItem(
         @MapsId("order")
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_order_item_order"))
+        @JsonBackReference
         val order: Order,
 
 //        @Id
@@ -204,6 +204,7 @@ data class OrderItem(
         val price: Float = 0f,
 
         @OneToOne(mappedBy = "orderItem")
+        @JsonManagedReference
         val bom: Bom? = null
 ) : Serializable
 
@@ -236,6 +237,7 @@ data class Product(
         @OneToOne
 //        @JoinColumn(name = "id")
         @PrimaryKeyJoinColumn(name = "id")
+        @JsonManagedReference
         val material: Material? = null,
 
 //        @NaturalId
@@ -264,6 +266,7 @@ data class Product(
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_product_formula"))
 //        val formula: Formula
         @OneToMany(mappedBy = "product", cascade = [CascadeType.REMOVE], orphanRemoval = true)
+        @JsonManagedReference
         val formulas: List<Formula> = LinkedList()
 )
 
@@ -338,7 +341,12 @@ data class DeliverySheet(
         @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
         var committedOn: Date? = null,
 
+        @Temporal(TemporalType.DATE)
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+        var deliveryOn: Date? = null,
+
         @OneToMany(mappedBy = "deliverySheet")
+        @JsonManagedReference
         val items: MutableList<DeliverySheetItem> = mutableListOf()
 )
 
@@ -366,6 +374,7 @@ data class DeliverySheetItem(
         @MapsId(value = "deliverySheet")
         @ManyToOne
 //        @JoinColumn(name = "id")
+        @JsonBackReference
         val deliverySheet: DeliverySheet? = null,
 
         @MapsId(value = "orderItem")
@@ -410,6 +419,7 @@ data class Formula(
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_rev_product"))
 //        @Column(insertable = false, updatable = false)
+        @JsonBackReference
         val product: Product? = null,
 //        val formula: Formula,
 
@@ -428,6 +438,7 @@ data class Formula(
 //        @JoinColumn(name = "produce_condition", foreignKey = ForeignKey(name = "fk_product_produce_cond"))
         @PrimaryKeyJoinColumn
         @OnDelete(action = OnDeleteAction.CASCADE)
+        @JsonManagedReference
         var produceCondition: ProduceCondition? = null,
 
         @OneToMany(mappedBy = "formula", cascade = [CascadeType.REMOVE])
@@ -452,6 +463,7 @@ data class ProduceCondition(
         @MapsId
         @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
+        @JsonBackReference
         val formula: Formula? = null,
 
         @Column(nullable = false)
@@ -583,6 +595,7 @@ data class Material(
         val metadata: String? = null,
 
         @OneToOne(mappedBy = "material")
+        @JsonBackReference
         val product: Product? = null
 ) : Serializable
 
@@ -667,6 +680,7 @@ data class Bom(
                 foreignKey = ForeignKey(name = "fk_bom_order_id")),
                 JoinColumn(name = "product_id", referencedColumnName = "product_id"),
                 foreignKey = ForeignKey(name = "fk_bom_product_id"))
+        @JsonBackReference
         val orderItem: OrderItem? = null,
 
         @ManyToOne
@@ -963,7 +977,7 @@ data class RepoChanging(
          */
         val status: Int = 0,
 
-        val createDate: Date = Date(),
+        val createDate: Date? = Date(),
 
         @ManyToOne//(optional = true, fetch = FetchType.EAGER)
         @JoinColumn(name = "applicant")
@@ -981,7 +995,11 @@ data class RepoChanging(
         val purchasingOrder: PurchasingOrder? = null,
 
         @ManyToOne(optional = true, fetch = FetchType.EAGER)
-        val order: Order? = null,
+        var order: Order? = null,
+
+        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+        @JoinColumn(name = "delivery_id")
+        val deliverySheet: DeliverySheet? = null,
 
         val department: String? = null,
 
@@ -993,8 +1011,9 @@ data class RepoChanging(
         val executeDate: Date? = null,
         val comment: String? = null,
 
-        @OneToMany(mappedBy = "repoChanging")
-        val items: List<RepoChangingItem> = LinkedList()
+        @OneToMany(mappedBy = "repoChanging", cascade = [CascadeType.PERSIST])
+        @JsonManagedReference
+        val items: MutableList<RepoChangingItem> = mutableListOf()
 )
 
 
@@ -1030,6 +1049,7 @@ data class RepoChangingItem(
         @MapsId(value = "repoChanging")
         @ManyToOne
         @JoinColumn(referencedColumnName = "id", foreignKey = ForeignKey(name = "fk_repo_changing_item_repo_changing"))
+        @JsonBackReference
         val repoChanging: RepoChanging,
 
         @MapsId(value = "material")
@@ -1243,11 +1263,11 @@ data class CollectingSettlement(
         @ManyToOne
         val client: Client? = null,
 
-        val createDate: Date = Date(),
+        var createDate: Date = Date(),
 
-        val value: Float = 0f,
+        var value: Float = 0f,
 
-        val status: Int = 0,
+        var status: Int = 0,
 
         @ManyToOne
         @JoinColumn(name = "confirmed_by")
@@ -1269,7 +1289,8 @@ data class CollectingSettlement(
         @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
 
-        @OneToMany(mappedBy = "settlement")
+        @OneToMany(mappedBy = "settlement", cascade = [CascadeType.PERSIST])
+        @JsonManagedReference
         val items: List<CollectingSettlementItem> = ArrayList()
 )
 
@@ -1304,22 +1325,23 @@ interface CollectingSettlementProjection {
 @Entity
 data class CollectingSettlementItem(
         @EmbeddedId
-        val id: CollectingSettlementItemKey,
+        var id: CollectingSettlementItemKey,
 
         @MapsId("settlement")
         @ManyToOne
 //        @JoinColumn(name = "settlement_id")
-        val settlement: CollectingSettlement? = null,
+        @JsonBackReference
+        var settlement: CollectingSettlement? = null,
 
         @MapsId("order")
         @ManyToOne
-        val order: Order? = null
+        var order: Order? = null
 )
 
 @Embeddable
 class CollectingSettlementItemKey(
-        val settlement: Int = 0,
-        val order: Long = 0
+        var settlement: Int = 0,
+        var order: Long = 0
 ) : Serializable
 
 @Projection(name = "CollectingSettlementItem", types = [CollectingSettlementItem::class])
