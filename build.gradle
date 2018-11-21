@@ -50,7 +50,7 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-data-rest"
 //    compile "org.springframework.boot:spring-boot-configuration-processor"
     compile "org.springframework.boot:spring-boot-starter-freemarker"
-    compile("org.springframework.boot:spring-boot-starter-quartz")
+//    compile("org.springframework.boot:spring-boot-starter-quartz")
 
     // jackson json
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.7"

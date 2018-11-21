@@ -19,7 +19,11 @@ spring:
     show-sql: true
 
 #    hibernate:
-#      ddl-auto: create # none # validate # update # create-drop
+#      ddl-auto: create-drop #update #create # none # validate # update # create-drop
+
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL57Dialect
 
   datasource:
     url:      jdbc:mysql://127.0.0.1/hly?useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
@@ -40,3 +44,6 @@ spring:
 #  web:
 #    enabled: false
 
+#hibernate:
+#  dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+#    storage_engine: innodb

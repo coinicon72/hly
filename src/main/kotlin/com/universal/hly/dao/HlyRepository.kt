@@ -220,15 +220,18 @@ interface MaterialTypeRepository : MyBaseRepository<MaterialType, Long> {
 
 @RequiresPermissions(value = ["production:schedule:read"])
 //@RepositoryRestResource(excerptProjection = InlineOrderItemAndFormulaType::class)
-interface ProducingScheduleRepository : MyBaseRepository<ProducingSchedule, ProducingScheduleKey> {
-//    @Query("select * from bom b join order_item oi on b.order_id = oi.order_id and b.product_id = oi.product_id where oi.order_id = ?1", nativeQuery = true)
+interface ProducingScheduleRepository : MyBaseRepository<ProducingSchedule, OrderItemKey> {
+    @Query("select * from bom b join order_item oi on b.order_id = oi.order_id and b.product_id = oi.product_id where oi.order_id = ?1", nativeQuery = true)
     fun findByOrder(id: Long): List<ProducingSchedule>
+
+    fun findByProducingDateIsNull(): List<ProducingSchedule>
 }
 
 
 @RequiresPermissions(value = ["production:bom:read"])
 @RepositoryRestResource(excerptProjection = InlineOrderItemAndFormulaType::class)
-interface BomRepository : MyBaseRepository<Bom, Long> {//BomKey> {
+interface BomRepository : MyBaseRepository<Bom, OrderItemKey> {
+    //BomKey> {
     @Query("select * from bom b join order_item oi on b.order_id = oi.order_id and b.product_id = oi.product_id where oi.order_id = ?1", nativeQuery = true)
     fun findByOrderId(@Param("oid") oid: Long): List<Bom>
 }
@@ -299,11 +302,11 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
 
     fun findByStatus(@Param("status") status: Int): List<RepoChanging>
 
-//    fun findByStatusAndTypeIn(@Param("type") type: List<Int>, @Param("status") status: Int): List<RepoChanging>
+    //    fun findByStatusAndTypeIn(@Param("type") type: List<Int>, @Param("status") status: Int): List<RepoChanging>
     @Query("select * from repo_changing where type <> 0 and status=?1", nativeQuery = true)
     fun findStockInOutByStatus(@Param("status") status: Int): List<RepoChanging>
 
-//    fun findByStatusAndTypeIn(@Param("type") type: List<Int>, @Param("status") status: Int): List<RepoChanging>
+    //    fun findByStatusAndTypeIn(@Param("type") type: List<Int>, @Param("status") status: Int): List<RepoChanging>
     @Query("select * from repo_changing where type=-1 and order_id=:oid", nativeQuery = true)
     fun findStockOutByOrderId(@Param("oid") id: Long): List<RepoChanging>
 
@@ -366,7 +369,7 @@ interface UserRepository : MyBaseRepository<User, Int> {
 //            "from organization o where o.type = 1", nativeQuery = true)
 //    override fun findAll(): List<User>
 
-//    @Query("select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
+    //    @Query("select id, info->>'\$.name' name, info->>'\$.phone' phone, " +
 //            "info->>'\$.title' title, info->>'\$.pwd' password " +
 //            "from organization o where o.type = 1", nativeQuery = true)
 //    override fun findAll(pageable: Pageable?): Page<User>
@@ -473,6 +476,8 @@ class OrderItemKeyConverter : BackendIdConverter {
 
     override fun supports(type: Class<*>): Boolean {
         return OrderItem::class.java == type
+                || ProducingSchedule::class.java == type
+                || Bom::class.java == type
     }
 }
 
@@ -496,25 +501,25 @@ class DeliverySheetItemKeyConverter : BackendIdConverter {
     }
 }
 
-@Component
-class ProducingScheduleKeyConverter : BackendIdConverter {
-
-    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
-        if (id == null) return null
-
-        val parts = id.split("_")
-        return ProducingScheduleKey(parts[0].toLong(), parts[1].toLong())
-    }
-
-    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
-        val id: ProducingScheduleKey = source as ProducingScheduleKey
-        return String.format("%s_%s", id.order, id.product)
-    }
-
-    override fun supports(type: Class<*>): Boolean {
-        return ProducingSchedule::class.java == type
-    }
-}
+//@Component
+//class ProducingScheduleKeyConverter : BackendIdConverter {
+//
+//    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+//        if (id == null) return null
+//
+//        val parts = id.split("_")
+//        return OrderItemKey(parts[0].toLong(), parts[1].toLong())
+//    }
+//
+//    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+//        val id: OrderItemKey = source as OrderItemKey
+//        return String.format("%s_%s", id.order, id.product)
+//    }
+//
+//    override fun supports(type: Class<*>): Boolean {
+//        return ProducingSchedule::class.java == type
+//    }
+//}
 
 //@Component
 //class BomKeyConverter : BackendIdConverter {
@@ -543,12 +548,12 @@ class BomItemKeyConverter : BackendIdConverter {
         if (id == null) return null
 
         val parts = id.split("_")
-        return BomItemKey(parts[0].toLong(), parts[1].toLong())
+        return BomItemKey(parts[0].toLong(), parts[1].toLong(), parts[2].toLong())
     }
 
     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
         val id: BomItemKey = source as BomItemKey
-        return String.format("%s_%s", id.bom, id.material)
+        return String.format("%s_%s_%s", id.order, id.product, id.material)
     }
 
     override fun supports(type: Class<*>): Boolean {
@@ -599,86 +604,86 @@ class RepoHistoryKeyConverter : BackendIdConverter {
 }
 
 
- @Component
- class PurchasingOrderItemKeyConverter : BackendIdConverter {
+@Component
+class PurchasingOrderItemKeyConverter : BackendIdConverter {
 
-     override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
-         if (id == null) return null
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
 
-         val parts = id.split("_")
-         return PurchasingOrderItemKey(parts[0].toInt(), parts[1].toLong())
-     }
+        val parts = id.split("_")
+        return PurchasingOrderItemKey(parts[0].toInt(), parts[1].toLong())
+    }
 
-     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
-         val id: PurchasingOrderItemKey = source as PurchasingOrderItemKey
-         return String.format("%s_%s", id.purchasingOrder, id.material)
-     }
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: PurchasingOrderItemKey = source as PurchasingOrderItemKey
+        return String.format("%s_%s", id.purchasingOrder, id.material)
+    }
 
-     override fun supports(type: Class<*>): Boolean {
-         return PurchasingOrderItem::class.java == type
-     }
- }
-
-
- @Component
- class RepoChangingItemKeyConverter : BackendIdConverter {
-
-     override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
-         if (id == null) return null
-
-         val parts = id.split("_")
-         return RepoChangingItemKey(parts[0].toInt(), parts[1].toLong())
-     }
-
-     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
-         val id: RepoChangingItemKey = source as RepoChangingItemKey
-         return String.format("%s_%s", id.repoChanging, id.material)
-     }
-
-     override fun supports(type: Class<*>): Boolean {
-         return RepoChangingItem::class.java == type
-     }
- }
+    override fun supports(type: Class<*>): Boolean {
+        return PurchasingOrderItem::class.java == type
+    }
+}
 
 
- @Component
- class CollectingSettlementItemKeyConverter : BackendIdConverter {
+@Component
+class RepoChangingItemKeyConverter : BackendIdConverter {
 
-     override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
-         if (id == null) return null
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
 
-         val parts = id.split("_")
-         return CollectingSettlementItemKey(parts[0].toInt(), parts[1].toLong())
-     }
+        val parts = id.split("_")
+        return RepoChangingItemKey(parts[0].toInt(), parts[1].toLong())
+    }
 
-     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
-         val id: CollectingSettlementItemKey = source as CollectingSettlementItemKey
-         return String.format("%s_%s", id.settlement, id.order)
-     }
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: RepoChangingItemKey = source as RepoChangingItemKey
+        return String.format("%s_%s", id.repoChanging, id.material)
+    }
 
-     override fun supports(type: Class<*>): Boolean {
-         return CollectingSettlementItem::class.java == type
-     }
- }
+    override fun supports(type: Class<*>): Boolean {
+        return RepoChangingItem::class.java == type
+    }
+}
 
 
- @Component
- class PaymentSettlementItemKeyConverter : BackendIdConverter {
+@Component
+class CollectingSettlementItemKeyConverter : BackendIdConverter {
 
-     override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
-         if (id == null) return null
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
 
-         val parts = id.split("_")
-         return PaymentSettlementItemKey(parts[0].toInt(), parts[1].toInt())
-     }
+        val parts = id.split("_")
+        return CollectingSettlementItemKey(parts[0].toInt(), parts[1].toLong())
+    }
 
-     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
-         val id: PaymentSettlementItemKey = source as PaymentSettlementItemKey
-         return String.format("%s_%s", id.settlement, id.order)
-     }
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: CollectingSettlementItemKey = source as CollectingSettlementItemKey
+        return String.format("%s_%s", id.settlement, id.order)
+    }
 
-     override fun supports(type: Class<*>): Boolean {
-         return PaymentSettlementItem::class.java == type
-     }
- }
+    override fun supports(type: Class<*>): Boolean {
+        return CollectingSettlementItem::class.java == type
+    }
+}
+
+
+@Component
+class PaymentSettlementItemKeyConverter : BackendIdConverter {
+
+    override fun fromRequestId(id: String?, entityType: Class<*>): Serializable? {
+        if (id == null) return null
+
+        val parts = id.split("_")
+        return PaymentSettlementItemKey(parts[0].toInt(), parts[1].toInt())
+    }
+
+    override fun toRequestId(source: Serializable, entityType: Class<*>): String {
+        val id: PaymentSettlementItemKey = source as PaymentSettlementItemKey
+        return String.format("%s_%s", id.settlement, id.order)
+    }
+
+    override fun supports(type: Class<*>): Boolean {
+        return PaymentSettlementItem::class.java == type
+    }
+}
 //endregion

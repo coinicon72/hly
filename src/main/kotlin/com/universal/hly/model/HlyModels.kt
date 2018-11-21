@@ -184,16 +184,16 @@ data class OrderItem(
 //        val id: Long? = null,
         val id: OrderItemKey,
 
-        @MapsId("order")
+//        @MapsId("order")
         @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_item_order"))
+        @JoinColumn(name = "order_id", foreignKey = ForeignKey(name = "fk_order_item_order"), insertable = false, updatable = false)
         @JsonBackReference
         val order: Order,
 
-//        @Id
-        @MapsId("product")
+////        @Id
+//        @MapsId("product")
         @ManyToOne(fetch = FetchType.EAGER)
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_item_product"))
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_item_product"), insertable = false, updatable = false)
         val product: Product,
 
         @Column(nullable = false)
@@ -203,9 +203,15 @@ data class OrderItem(
 
         val price: Float = 0f,
 
-        @OneToOne(mappedBy = "orderItem")
-        @JsonManagedReference
-        val bom: Bom? = null
+//        @OneToOne(mappedBy = "orderItem")
+//        @JsonManagedReference
+        @OneToOne(cascade = [CascadeType.ALL])
+        @PrimaryKeyJoinColumns
+        val producingSchedule: ProducingSchedule? = null
+
+//        @OneToOne(mappedBy = "orderItem")
+//        @JsonManagedReference
+//        val bom: Bom? = null
 ) : Serializable
 
 
@@ -222,7 +228,10 @@ interface InlineOrderAndProductType {
 
 @Embeddable
 data class OrderItemKey(
+        @Column(name = "order_id")
         val order: Long,
+
+        @Column(name = "product_id")
         val product: Long
 ) : Serializable
 
@@ -630,23 +639,28 @@ data class ProducingSchedule(
 //        @GeneratedValue(strategy = GenerationType.IDENTITY)
 //        val id: Long = 0,
         @EmbeddedId
-        val id: ProducingScheduleKey,
+        val id: OrderItemKey,
 
-        @MapsId("order")
-        @ManyToOne(fetch = FetchType.EAGER)
-        @JoinColumn()//foreignKey = ForeignKey(name = "fk_order_item_order"))
-        val order: Order,
+//        @MapsId("order")
+//        @ManyToOne(fetch = FetchType.EAGER)
+//        @JoinColumn()//foreignKey = ForeignKey(name = "fk_order_item_order"))
+//        val order: Order,
+//
+//        @MapsId("product")
+//        @ManyToOne(fetch = FetchType.EAGER)
+//        @JoinColumn()//foreignKey = ForeignKey(name = "fk_order_item_product"))
+//        val product: Product,
 
-        @MapsId("product")
-        @ManyToOne(fetch = FetchType.EAGER)
-        @JoinColumn()//foreignKey = ForeignKey(name = "fk_order_item_product"))
-        val product: Product,
+//        @MapsId
 //        @OneToOne(fetch = FetchType.EAGER)
-//        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id",
-//                foreignKey = ForeignKey(name = "fk_order_item_order")),
-//                JoinColumn(name = "product_id", referencedColumnName = "product_id"),
-//                foreignKey = ForeignKey(name = "fk_order_item_product"))
-//        val orderItem: OrderItem? = null,
+//        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
+//                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
+////        @PrimaryKeyJoinColumns(PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
+////                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id"))
+//        @JsonBackReference
+        @OneToOne
+        @PrimaryKeyJoinColumns//(foreignKey = ForeignKey(name = "fk_prodsch_orderitem"))
+        val orderItem: OrderItem? = null,
 
         @Column(nullable = false)
         val scheduleDate: Date = Date(),
@@ -655,33 +669,47 @@ data class ProducingSchedule(
         val producingDate: Date?,
 
         @Column()
-        val line: String?
+        val line: String?,
+
+        @OneToOne(cascade = [CascadeType.ALL])
+        @PrimaryKeyJoinColumns
+//        @PrimaryKeyJoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
+//                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
+        val bom: Bom? = null
 )
 
 
-@Embeddable
-data class ProducingScheduleKey(
-        val order: Long,
-        val product: Long
-) : Serializable
+//@Embeddable
+//data class ProducingScheduleKey(
+//        val order: Long,
+//        val product: Long
+//) : Serializable
 
 
 @Entity
 data class Bom(
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        val id: Long = 0,
-//        @EmbeddedId
-//        val id: BomKey,
+//        @Id
+//        @GeneratedValue(strategy = GenerationType.IDENTITY)
+//        val id: Long = 0,
+        @EmbeddedId
+        val id: OrderItemKey,
 
 //       @Id
-        @OneToOne(fetch = FetchType.EAGER)
-        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id",
-                foreignKey = ForeignKey(name = "fk_bom_order_id")),
-                JoinColumn(name = "product_id", referencedColumnName = "product_id"),
-                foreignKey = ForeignKey(name = "fk_bom_product_id"))
-        @JsonBackReference
-        val orderItem: OrderItem? = null,
+//        @MapsId
+//        @ManyToOne(fetch = FetchType.EAGER)
+//        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
+//                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
+////        @PrimaryKeyJoinColumns(PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
+////                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id"))
+////        @JsonBackReference
+////        val orderItem: OrderItem? = null,
+
+        @OneToOne
+        @PrimaryKeyJoinColumns(value = [PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
+            PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id")],
+                foreignKey = ForeignKey(name = "fk_bom_prodsch"))
+        val producingSchedule: ProducingSchedule? = null,
+
 
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_formula_id"))
@@ -694,19 +722,21 @@ data class Bom(
         val items: List<BomItem> = LinkedList()
 )
 
-@Embeddable
-data class BomKey(
-        val order: Long,
-        val product: Long
-) : Serializable
+//@Embeddable
+//data class BomKey(
+//        val order: Long,
+//        val product: Long
+//) : Serializable
 
 
 @Projection(name = "InlineOrderItemAndFormulaType", types = [Bom::class])
 interface InlineOrderItemAndFormulaType {
-    fun getId(): Long
+    fun getId(): OrderItemKey
     fun getCreateDate(): Date
     fun getFormula(): Formula
-    fun getOrderItem(): OrderItem
+//    fun getOrderItem(): OrderItem
+    fun getProducingSchedule(): ProducingSchedule
+    fun getItems(): List<BomItem>
 }
 
 
@@ -715,10 +745,15 @@ data class BomItem(
         @EmbeddedId
         val id: BomItemKey,
 
-        @MapsId("bom")
-        @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_item_bom"))
-        val bom: Bom,
+//        @MapsId("bom")
+//        @ManyToOne
+//        @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_item_bom"))
+//        val bom: Bom,
+        @MapsId
+        @OneToOne
+        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
+                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
+        val bom: Bom? = null,
 
         @MapsId("material")
         @ManyToOne
@@ -732,7 +767,15 @@ data class BomItem(
 
 @Embeddable
 data class BomItemKey(
-        val bom: Long = 0,
+        @Column(name = "order_id")
+        val order: Long = 0,
+
+        @Column(name = "product_id")
+        val product: Long = 0,
+
+//        val bom: Long = 0,
+
+        @Column(name = "material_id")
         val material: Long = 0
 ) : Serializable
 
