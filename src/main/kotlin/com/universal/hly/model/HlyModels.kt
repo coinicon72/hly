@@ -11,6 +11,9 @@ import java.io.Serializable
 import java.util.*
 import javax.persistence.*
 import kotlin.collections.ArrayList
+import com.fasterxml.jackson.annotation.ObjectIdGenerators
+
+
 
 /**
  * Created by swm on 2018-4-5
@@ -34,6 +37,7 @@ data class ClientType(
 
 @Entity
 //@Table(uniqueConstraints = [UniqueConstraint(name = "uniq_Client_contract_no", columnNames = ["contractNo"])])
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class Client(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -87,7 +91,7 @@ data class Client(
         val metadata: String? = null,
 
         @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)//, cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
-        @JsonManagedReference
+//        @JsonManagedReference
         val orders: MutableList<Order> = mutableListOf()
 ) {
     override fun toString(): String {
@@ -123,6 +127,7 @@ interface InlineClientType {
 @Entity
 @Table(name = "[order]",
         uniqueConstraints = [(UniqueConstraint(name = "uk_order_no", columnNames = ["no"]))])
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class Order(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -135,7 +140,7 @@ data class Order(
         @ManyToOne//(fetch = FetchType.EAGER)
 //        @JoinColumn(name = "client", foreignKey = ForeignKey(name = "fk_client_order"))
         @JoinColumn(nullable = false, foreignKey = ForeignKey(name = "fk_client_order"))
-        @JsonBackReference
+//        @JsonBackReference
         var client: Client? = null,
 
         @Column(nullable = false)
@@ -999,6 +1004,7 @@ data class RepoChangingReason(
                 ]
         )
 )
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class RepoChanging(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -1055,7 +1061,7 @@ data class RepoChanging(
         val comment: String? = null,
 
         @OneToMany(mappedBy = "repoChanging", cascade = [CascadeType.PERSIST])
-        @JsonManagedReference
+//        @JsonManagedReference
         val items: MutableList<RepoChangingItem> = mutableListOf()
 )
 
@@ -1085,6 +1091,7 @@ interface InlineRepoChanging {
 
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class RepoChangingItem(
         @EmbeddedId
         val id: RepoChangingItemKey,
@@ -1092,7 +1099,7 @@ data class RepoChangingItem(
         @MapsId(value = "repoChanging")
         @ManyToOne
         @JoinColumn(referencedColumnName = "id", foreignKey = ForeignKey(name = "fk_repo_changing_item_repo_changing"))
-        @JsonBackReference
+//        @JsonBackReference
         val repoChanging: RepoChanging,
 
         @MapsId(value = "material")

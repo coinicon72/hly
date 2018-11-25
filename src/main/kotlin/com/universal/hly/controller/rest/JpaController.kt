@@ -60,6 +60,9 @@ class RepoChangingController {
     @Autowired
     lateinit var orderRepository: OrderRepository
 
+    @Autowired
+    lateinit var repoChangingItemRepository: RepoChangingItemRepository
+
 //    @Autowired
 //    lateinit var productRepository: ProductRepository
 
@@ -373,7 +376,7 @@ class RepoChangingController {
     @RequiresPermissions("accounting:settlement")
     @PostMapping("/collectingSettlement")
     @Transactional
-    fun createCollectingSettlement(@RequestBody request: CollectingSettlement): ResponseEntity<CollectingSettlement> {
+    fun createCollectingSettlement(@RequestBody request: CollectingSettlement): CollectingSettlement {
 
         request.status = 0
         request.createDate = Date()
@@ -388,7 +391,45 @@ class RepoChangingController {
         entityManager.persist(request)
 
         //
-        return ResponseEntity.ok(request)
+        return request
+    }
+
+
+    @RequiresPermissions("purchasing:plan")
+    @GetMapping("/purchasingDetails")
+//    @Transactional
+    fun listPurchasingDetails(): List<RepoChangingItem> {
+
+        val repoChangingItems = repoChangingItemRepository.findStockInByReasonId(1)
+
+//        repoChangingItems.forEach {
+//            it.repoChanging.deliverySheet
+//            it.repoChanging.order?.client
+//            it.repoChanging.repo
+//            it.material
+//        }
+
+        //
+        return repoChangingItems
+    }
+
+
+    @RequiresPermissions("sales:order")
+    @GetMapping("/salesDetails")
+//    @Transactional
+    fun listSalesDetails(): List<RepoChangingItem> {
+
+        val repoChangingItems = repoChangingItemRepository.findStockOutByReasonId(11)
+
+//        repoChangingItems.forEach {
+//            it.repoChanging.deliverySheet
+//            it.repoChanging.order?.client
+//            it.repoChanging.repo
+//            it.material
+//        }
+
+        //
+        return repoChangingItems
     }
 }
 

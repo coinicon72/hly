@@ -313,6 +313,9 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
     @Query("select * from repo_changing where type=-1 and order_id=:oid and reason_id=:reason", nativeQuery = true)
     fun findStockOutByOrderIdAndReasonId(@Param("oid") id: Long, @Param("reason") reason: Int): List<RepoChanging>
 
+    @Query("select * from repo_changing where type=-1 and reason_id=:reason", nativeQuery = true)
+    fun findStockOutByReasonId(@Param("reason") reason: Int): List<RepoChanging>
+
     @Query(nativeQuery = true, name = "RepoChanging.previewStockOut")
     fun previewStockIn(@Param("cid") cid: Int): List<StockInPreview>
 
@@ -322,7 +325,15 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
 
 @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
 // POST {"id": {"repoChanging": 0, "material": 0}, "repoChanging": {"id":1}, "material": {"id":6}, "quantity": -1.3, "price": 4.4}
-interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, RepoChangingItemKey>
+interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, RepoChangingItemKey> {
+    @Query("SELECT ci.* FROM hly.repo_changing_item ci join repo_changing c on ci.repo_changing_id=c.id " +
+            "where c.type=-1 and c.reason_id=:reason", nativeQuery = true)
+    fun findStockOutByReasonId(@Param("reason") reason: Int): List<RepoChangingItem>
+
+    @Query("SELECT ci.* FROM hly.repo_changing_item ci join repo_changing c on ci.repo_changing_id=c.id " +
+            "where c.type=1 and c.reason_id=:reason", nativeQuery = true)
+    fun findStockInByReasonId(@Param("reason") reason: Int): List<RepoChangingItem>
+}
 
 
 @RequiresPermissions(value = ["system:user-management:read"])
