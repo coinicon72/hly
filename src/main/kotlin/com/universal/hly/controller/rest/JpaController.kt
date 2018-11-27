@@ -7,6 +7,7 @@ import com.universal.hly.model.*
 import org.apache.shiro.SecurityUtils
 import org.apache.shiro.authz.annotation.RequiresPermissions
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -62,6 +63,9 @@ class RepoChangingController {
 
     @Autowired
     lateinit var repoChangingItemRepository: RepoChangingItemRepository
+
+    @Autowired
+    lateinit var purchasingOrderRepository: PurchasingOrderRepository
 
 //    @Autowired
 //    lateinit var productRepository: ProductRepository
@@ -395,42 +399,83 @@ class RepoChangingController {
     }
 
 
+//    @RequiresPermissions("purchasing:plan")
+//    @GetMapping("/purchasingDetails")
+////    @Transactional
+//    fun listPurchasingDetails(): List<RepoChangingItem> {
+//
+//        val repoChangingItems = repoChangingItemRepository.findStockInByReasonId(1)
+//
+////        repoChangingItems.forEach {
+////            it.repoChanging.deliverySheet
+////            it.repoChanging.order?.client
+////            it.repoChanging.repo
+////            it.material
+////        }
+//
+//        //
+//        return repoChangingItems
+//    }
+
+
     @RequiresPermissions("purchasing:plan")
-    @GetMapping("/purchasingDetails")
+    @GetMapping("/purchasingOrders")
 //    @Transactional
-    fun listPurchasingDetails(): List<RepoChangingItem> {
+    fun listPurchasingDetails(): List<PurchasingOrder> {
 
-        val repoChangingItems = repoChangingItemRepository.findStockInByReasonId(1)
+        val orders = purchasingOrderRepository.findAll()
 
-//        repoChangingItems.forEach {
-//            it.repoChanging.deliverySheet
-//            it.repoChanging.order?.client
-//            it.repoChanging.repo
-//            it.material
-//        }
+        orders.forEach {
+            it.items.size
+        }
 
         //
-        return repoChangingItems
+        return orders
     }
 
 
     @RequiresPermissions("sales:order")
-    @GetMapping("/salesDetails")
+    @GetMapping("/orders")
 //    @Transactional
-    fun listSalesDetails(): List<RepoChangingItem> {
+    fun listOrders(@RequestParam(name = "page", required = false) page: Optional<Int>,
+                   @RequestParam(name = "size", required = false) size: Optional<Int>): List<Order> {
 
-        val repoChangingItems = repoChangingItemRepository.findStockOutByReasonId(11)
+        val p = page.orElse(0)
+        val s = size.orElse(10)
+        val orders = orderRepository.findAll(PageRequest.of(p, s))
 
-//        repoChangingItems.forEach {
-//            it.repoChanging.deliverySheet
-//            it.repoChanging.order?.client
-//            it.repoChanging.repo
-//            it.material
-//        }
+        // force load lazy collection
+        orders.forEach {
+            it.items.size
+            it.deliverySheets.size
+
+            it.deliverySheets.forEach { sheet ->
+                sheet.items.size
+            }
+        }
 
         //
-        return repoChangingItems
+        return orders.content
     }
+
+
+//    @RequiresPermissions("sales:order")
+//    @GetMapping("/salesDetails")
+////    @Transactional
+//    fun listSalesDetails(): List<RepoChangingItem> {
+//
+//        val repoChangingItems = repoChangingItemRepository.findStockOutByReasonId(11)
+//
+////        repoChangingItems.forEach {
+////            it.repoChanging.deliverySheet
+////            it.repoChanging.order?.client
+////            it.repoChanging.repo
+////            it.material
+////        }
+//
+//        //
+//        return repoChangingItems
+//    }
 }
 
 data class ApplyStockChanging(

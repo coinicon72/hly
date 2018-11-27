@@ -11,8 +11,6 @@ import java.io.Serializable
 import java.util.*
 import javax.persistence.*
 import kotlin.collections.ArrayList
-import com.fasterxml.jackson.annotation.ObjectIdGenerators
-
 
 
 /**
@@ -158,7 +156,7 @@ data class Order(
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_product"))
 //        val product: Product? = null,
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_order_details"))
-        @JsonManagedReference
+//        @JsonManagedReference
         val items: MutableList<OrderItem> = mutableListOf(),
 
         val tax: Boolean = false,
@@ -173,7 +171,11 @@ data class Order(
 
         // 订单状态, 0 = 签订, 1 = 执行中, 2 = 已完成, 3 = 取消
         @Column(nullable = false, columnDefinition = "tinyint default 0")
-        var status: Int = 0
+        var status: Int = 0,
+
+
+        @OneToMany(mappedBy = "order")
+        val deliverySheets: List<DeliverySheet> = listOf()
 ) {
     override fun toString(): String {
         return "Order(id=$id, no='$no', orderDate=$orderDate, deliveryDate=$deliveryDate, tax=$tax, value=$value, actualValue=$actualValue, comment=$comment, metadata=$metadata, status=$status)"
@@ -183,6 +185,7 @@ data class Order(
 
 @Entity
 //@IdClass(OrderItemKey::class)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class OrderItem(
         @EmbeddedId
 //        @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -192,7 +195,7 @@ data class OrderItem(
 //        @MapsId("order")
         @ManyToOne
         @JoinColumn(name = "order_id", foreignKey = ForeignKey(name = "fk_order_item_order"), insertable = false, updatable = false)
-        @JsonBackReference
+//        @JsonBackReference
         val order: Order,
 
 ////        @Id
@@ -322,6 +325,7 @@ data class Product(
 //) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class DeliverySheet(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -361,7 +365,12 @@ data class DeliverySheet(
 
         @OneToMany(mappedBy = "deliverySheet")
         @JsonManagedReference
-        val items: MutableList<DeliverySheetItem> = mutableListOf()
+        val items: MutableList<DeliverySheetItem> = mutableListOf(),
+
+//        @OneToMany(mappedBy = "deliverySheet")
+//        val repoChangings: List<RepoChanging> = listOf()
+        @OneToOne(mappedBy = "deliverySheet")
+        val repoChanging: RepoChanging? = null
 )
 
 @Projection(name = "DeliverySheetWithOrder", types = [DeliverySheet::class])
@@ -639,6 +648,7 @@ data class MaterialType(
 
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class ProducingSchedule(
 //        @Id
 //        @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -692,6 +702,7 @@ data class ProducingSchedule(
 
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class Bom(
 //        @Id
 //        @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -786,6 +797,7 @@ data class BomItemKey(
 
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class PurchasingOrder(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -822,6 +834,7 @@ data class PurchasingOrder(
 
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class PurchasingOrderItem(
         @EmbeddedId
         val id: PurchasingOrderItemKey,
@@ -1046,7 +1059,10 @@ data class RepoChanging(
         @ManyToOne(optional = true, fetch = FetchType.EAGER)
         var order: Order? = null,
 
-        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+//        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+//        @JoinColumn(name = "delivery_id")
+//        val deliverySheet: DeliverySheet? = null,
+        @OneToOne(optional = true, fetch = FetchType.EAGER)
         @JoinColumn(name = "delivery_id")
         val deliverySheet: DeliverySheet? = null,
 
