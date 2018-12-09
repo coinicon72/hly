@@ -5,6 +5,7 @@ package com.universal.hly.controller.rest
 import com.universal.hly.dao.*
 import com.universal.hly.model.*
 import org.apache.shiro.SecurityUtils
+import org.apache.shiro.authz.annotation.Logical
 import org.apache.shiro.authz.annotation.RequiresPermissions
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
@@ -60,6 +61,9 @@ class RepoChangingController {
 
     @Autowired
     lateinit var orderRepository: OrderRepository
+
+    @Autowired
+    lateinit var repoChangingRepository: RepoChangingRepository
 
     @Autowired
     lateinit var repoChangingItemRepository: RepoChangingItemRepository
@@ -297,7 +301,7 @@ class RepoChangingController {
     @Transactional
     fun createRepoChangingForCommittedDeliverySheet(@PathVariable(value = "id") id: Long,
                                                     @RequestBody data: RepoChanging): Optional<RepoChanging> {
-        val sheet = deliverySheetRepository.findById(id) ?: return Optional.empty()
+//        val sheet = deliverySheetRepository.findById(id) ?: return Optional.empty()
 
         val changing = RepoChanging(0, repo = data.repo)
          entityManager.persist(data)
@@ -447,10 +451,16 @@ class RepoChangingController {
         // force load lazy collection
         orders.forEach {
             it.items.size
-            it.deliverySheets.size
+            it.items.forEach { oi ->
+                oi.producingSchedule?.orderItem = null
+                oi.producingSchedule?.bom?.producingSchedule = null
+            }
 
+            it.deliverySheets.size
             it.deliverySheets.forEach { sheet ->
                 sheet.items.size
+
+                sheet.repoChanging?.applicant?.roles?.clear()
             }
         }
 
@@ -476,6 +486,66 @@ class RepoChangingController {
 //        //
 //        return repoChangingItems
 //    }
+
+    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @GetMapping("/stock-out")
+    fun listStockOutByUser(): List<RepoChanging> {
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        val changings = repoChangingRepository.findByTypeAndApplicant(-1, user)
+
+//        changings.forEach { it.items.size }
+
+        return changings
+    }
+
+    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @GetMapping("/stock-out/rejected")
+    fun listRejectedStockOut(): List<RepoChanging> {
+//        val user: User = SecurityUtils.getSubject().principal as User
+
+        val changings = repoChangingRepository.findByTypeAndStatus(-1, -1)
+
+//        changings.forEach { it.items.size }
+
+        return changings
+    }
+
+    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @GetMapping("/stock-in")
+    fun listStockInByUser(): List<RepoChanging> {
+        val user: User = SecurityUtils.getSubject().principal as User
+
+        val changings = repoChangingRepository.findByTypeAndApplicant(1, user)
+
+//        changings.forEach { it.items.size }
+
+        return changings
+    }
+
+    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @GetMapping("/stock-in/rejected")
+    fun listRejectedStockIn(): List<RepoChanging> {
+//        val user: User = SecurityUtils.getSubject().principal as User
+
+        val changings = repoChangingRepository.findByTypeAndStatus(1, -1)
+
+//        changings.forEach { it.items.size }
+
+        return changings
+    }
+
+    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @GetMapping("/stock-changing")
+    fun listStockChanging(): List<RepoChanging> {
+//        val user: User = SecurityUtils.getSubject().principal as User
+
+        val changings = repoChangingRepository.findStockInOutByStatusNot(0)
+
+//        changings.forEach { it.items.size }
+
+        return changings
+    }
 }
 
 data class ApplyStockChanging(

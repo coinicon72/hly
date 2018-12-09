@@ -298,11 +298,16 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
 
     fun findByTypeAndStatusAndApplicant(@Param("type") type: Int, @Param("status") status: Int, @Param("user") user: User): List<RepoChanging>
 
+    fun findByTypeAndApplicant(@Param("type") type: Int, @Param("user") user: User): List<RepoChanging>
+
     fun findByApplicant(@Param("user") user: User): List<RepoChanging>
 
     fun findByStatus(@Param("status") status: Int): List<RepoChanging>
 
     //    fun findByStatusAndTypeIn(@Param("type") type: List<Int>, @Param("status") status: Int): List<RepoChanging>
+    @Query("select * from repo_changing where type <> 0 and status<>?1", nativeQuery = true)
+    fun findStockInOutByStatusNot(@Param("status") status: Int): List<RepoChanging>
+
     @Query("select * from repo_changing where type <> 0 and status=?1", nativeQuery = true)
     fun findStockInOutByStatus(@Param("status") status: Int): List<RepoChanging>
 
@@ -333,6 +338,9 @@ interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, RepoCh
     @Query("SELECT ci.* FROM hly.repo_changing_item ci join repo_changing c on ci.repo_changing_id=c.id " +
             "where c.type=1 and c.reason_id=:reason", nativeQuery = true)
     fun findStockInByReasonId(@Param("reason") reason: Int): List<RepoChangingItem>
+
+    @Query("SELECT ifnull(sum(quantity), 0) FROM repo_changing_item where repo_changing_id = :id", nativeQuery = true)
+    fun getTotalQuantityByRepoChangingId(@Param("id") id: Int): Int
 }
 
 

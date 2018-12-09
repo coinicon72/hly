@@ -26,6 +26,7 @@ class JsonConverterConfig : WebMvcConfigurer {
 
         val mapper = ObjectMapper()
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        mapper.configure(DeserializationFeature.FAIL_ON_UNRESOLVED_OBJECT_IDS, false)
         mapper.dateFormat = SimpleDateFormat(dateFormatStr)
         // IMPORTANT to avoid infinity recursion when handling bidirectional-relationships
         mapper.registerModule(Hibernate5Module())

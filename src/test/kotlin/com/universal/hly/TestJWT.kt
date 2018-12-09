@@ -1,19 +1,13 @@
 package com.universal.hly
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.universal.hly.model.*
 import com.universal.hly.security.getUserIdFromJWT
 import com.universal.hly.security.signJWT
 import com.universal.hly.security.verifyJWT
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
-import java.util.*
 
 @SpringBootTest
 @RunWith(SpringRunner::class)

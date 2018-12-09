@@ -185,7 +185,7 @@ data class Order(
 
 @Entity
 //@IdClass(OrderItemKey::class)
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class OrderItem(
         @EmbeddedId
 //        @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -215,11 +215,12 @@ data class OrderItem(
 //        @JsonManagedReference
         @OneToOne(cascade = [CascadeType.ALL])
         @PrimaryKeyJoinColumns
-        val producingSchedule: ProducingSchedule? = null
+        val producingSchedule: ProducingSchedule? = null,
 
-//        @OneToOne(mappedBy = "orderItem")
+        @OneToOne//(mappedBy = "orderItem")
 //        @JsonManagedReference
-//        val bom: Bom? = null
+        @PrimaryKeyJoinColumns
+        val bom: Bom? = null
 ) : Serializable
 
 
@@ -540,7 +541,7 @@ data class FormulaItem(
         val formula: Formula,
 
         @MapsId("material")
-        @ManyToOne(fetch = FetchType.LAZY)
+        @ManyToOne//(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_material"))
         val material: Material,
 
@@ -648,7 +649,7 @@ data class MaterialType(
 
 
 @Entity
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class ProducingSchedule(
 //        @Id
 //        @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -675,7 +676,7 @@ data class ProducingSchedule(
 //        @JsonBackReference
         @OneToOne
         @PrimaryKeyJoinColumns//(foreignKey = ForeignKey(name = "fk_prodsch_orderitem"))
-        val orderItem: OrderItem? = null,
+        var orderItem: OrderItem? = null,
 
         @Column(nullable = false)
         val scheduleDate: Date = Date(),
@@ -702,7 +703,7 @@ data class ProducingSchedule(
 
 
 @Entity
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class Bom(
 //        @Id
 //        @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -712,19 +713,20 @@ data class Bom(
 
 //       @Id
 //        @MapsId
-//        @ManyToOne(fetch = FetchType.EAGER)
+        @OneToOne(fetch = FetchType.EAGER)
+        @PrimaryKeyJoinColumns
 //        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
 //                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
-////        @PrimaryKeyJoinColumns(PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
-////                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id"))
-////        @JsonBackReference
-////        val orderItem: OrderItem? = null,
+//        @PrimaryKeyJoinColumns(PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
+//                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id"))
+//        @JsonBackReference
+        val orderItem: OrderItem? = null,
 
         @OneToOne
         @PrimaryKeyJoinColumns(value = [PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
             PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id")],
                 foreignKey = ForeignKey(name = "fk_bom_prodsch"))
-        val producingSchedule: ProducingSchedule? = null,
+        var producingSchedule: ProducingSchedule? = null,
 
 
         @ManyToOne
@@ -765,16 +767,27 @@ data class BomItem(
 //        @ManyToOne
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_item_bom"))
 //        val bom: Bom,
-        @MapsId
-        @OneToOne
-        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
-                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
-        val bom: Bom? = null,
+        @MapsId("order")
+        @ManyToOne
+        @JoinColumn(name = "order_id", referencedColumnName = "id")
+        val order: Order,
+
+        @MapsId("product")
+        @ManyToOne
+        @JoinColumn(name = "product_id", referencedColumnName = "id")
+        val product: Product,
 
         @MapsId("material")
         @ManyToOne
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_material"))
+        @JoinColumn(name = "material_id", referencedColumnName = "id",
+                foreignKey = ForeignKey(name = "fk_bom_material"))
         val material: Material,
+
+//        @MapsId
+        @ManyToOne
+        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id", insertable = false, updatable = false),
+                JoinColumn(name = "product_id", referencedColumnName = "product_id", insertable = false, updatable = false))
+        val bom: Bom? = null,
 
         val calcQuantity: Float = 0f,
         val quantity: Float = 0f
@@ -783,15 +796,13 @@ data class BomItem(
 
 @Embeddable
 data class BomItemKey(
-        @Column(name = "order_id")
+//        @Column(name = "order_id")
         val order: Long = 0,
 
-        @Column(name = "product_id")
+//        @Column(name = "product_id")
         val product: Long = 0,
 
-//        val bom: Long = 0,
-
-        @Column(name = "material_id")
+//        @Column(name = "material_id")
         val material: Long = 0
 ) : Serializable
 
@@ -834,7 +845,7 @@ data class PurchasingOrder(
 
 
 @Entity
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class PurchasingOrderItem(
         @EmbeddedId
         val id: PurchasingOrderItemKey,
@@ -1079,7 +1090,11 @@ data class RepoChanging(
         @OneToMany(mappedBy = "repoChanging", cascade = [CascadeType.PERSIST])
 //        @JsonManagedReference
         val items: MutableList<RepoChangingItem> = mutableListOf()
-)
+) {
+//    @Transient
+    val totalQuantity: Float
+        get() = this.items.map { it.quantity }.sum()
+}
 
 
 @Projection(name = "InlineRepoChanging", types = [RepoChanging::class])
@@ -1107,7 +1122,7 @@ interface InlineRepoChanging {
 
 
 @Entity
-@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
+//@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")//, resolver = RepoChangingItemKeyResolver::class)
 data class RepoChangingItem(
         @EmbeddedId
         val id: RepoChangingItemKey,
@@ -1423,6 +1438,7 @@ interface CollectingSettlementItemProjection {
 //select si.settlement_id, round(sum(o.value), 2) from `purchasing_order` o join payment_settlement_item si on o.id = si.order_id group by si.settlement_id;
 
 @Entity
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class PaymentSettlement(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -1439,24 +1455,18 @@ data class PaymentSettlement(
 
         @ManyToOne
         @JoinColumn(name = "confirmed_by")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val confirmedBy: User? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val confirmedDate: Date? = null,
 
         @ManyToOne
         @JoinColumn(name = "paid_by")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val paidBy: User? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val paidDate: Date? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val paidValue: Float? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
 
         @OneToMany(mappedBy = "settlement")
