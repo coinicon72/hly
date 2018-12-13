@@ -720,7 +720,7 @@ data class Bom(
 //        @PrimaryKeyJoinColumns(PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
 //                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id"))
 //        @JsonBackReference
-        val orderItem: OrderItem? = null,
+        var orderItem: OrderItem? = null,
 
         @OneToOne
         @PrimaryKeyJoinColumns(value = [PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),

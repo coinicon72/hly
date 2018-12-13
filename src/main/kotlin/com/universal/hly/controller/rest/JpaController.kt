@@ -450,9 +450,12 @@ class RepoChangingController {
 
         // force load lazy collection
         orders.forEach {
+            it.client?.orders?.clear()
+
             it.items.size
             it.items.forEach { oi ->
                 oi.producingSchedule?.orderItem = null
+                oi.producingSchedule?.bom?.orderItem = null
                 oi.producingSchedule?.bom?.producingSchedule = null
             }
 
@@ -487,7 +490,7 @@ class RepoChangingController {
 //        return repoChangingItems
 //    }
 
-    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @RequiresPermissions(value = ["repo:stock-out:read"], logical = Logical.OR)
     @GetMapping("/stock-out")
     fun listStockOutByUser(): List<RepoChanging> {
         val user: User = SecurityUtils.getSubject().principal as User
@@ -499,7 +502,22 @@ class RepoChangingController {
         return changings
     }
 
-    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @RequiresPermissions(value = ["repo:stock-out:read"], logical = Logical.OR)
+    @GetMapping("/all-stock-out")
+    fun listAllStockOut(@RequestParam(name = "page", required = false) page: Optional<Int>,
+                        @RequestParam(name = "size", required = false) size: Optional<Int>): List<RepoChanging> {
+//        val user: User = SecurityUtils.getSubject().principal as User
+        val p = page.orElse(0)
+        val s = size.orElse(10)
+
+        val changings = repoChangingRepository.findByType(-1, PageRequest.of(p, s))
+
+        changings.forEach { it.items.size }
+
+        return changings.content
+    }
+
+    @RequiresPermissions(value = ["repo:stock-out:read"], logical = Logical.OR)
     @GetMapping("/stock-out/rejected")
     fun listRejectedStockOut(): List<RepoChanging> {
 //        val user: User = SecurityUtils.getSubject().principal as User
@@ -511,7 +529,7 @@ class RepoChangingController {
         return changings
     }
 
-    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @RequiresPermissions(value = ["repo:stock-in:read"], logical = Logical.OR)
     @GetMapping("/stock-in")
     fun listStockInByUser(): List<RepoChanging> {
         val user: User = SecurityUtils.getSubject().principal as User
@@ -523,7 +541,23 @@ class RepoChangingController {
         return changings
     }
 
-    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @RequiresPermissions(value = ["repo:stock-in:read"], logical = Logical.OR)
+    @GetMapping("/all-stock-in")
+    fun listAllStockIn(@RequestParam(name = "page", required = false) page: Optional<Int>,
+                       @RequestParam(name = "size", required = false) size: Optional<Int>): List<RepoChanging> {
+//        val user: User = SecurityUtils.getSubject().principal as User
+        val p = page.orElse(0)
+        val s = size.orElse(10)
+//        val user: User = SecurityUtils.getSubject().principal as User
+
+        val changings = repoChangingRepository.findByType(1, PageRequest.of(p, s))
+
+        changings.forEach { it.items.size }
+
+        return changings.content
+    }
+
+    @RequiresPermissions(value = ["repo:stock-in:read"], logical = Logical.OR)
     @GetMapping("/stock-in/rejected")
     fun listRejectedStockIn(): List<RepoChanging> {
 //        val user: User = SecurityUtils.getSubject().principal as User

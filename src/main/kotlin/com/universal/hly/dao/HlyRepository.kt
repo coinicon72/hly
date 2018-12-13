@@ -6,6 +6,8 @@ import com.universal.hly.model.*
 import org.apache.shiro.authz.annotation.Logical
 import org.apache.shiro.authz.annotation.RequiresAuthentication
 import org.apache.shiro.authz.annotation.RequiresPermissions
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.NoRepositoryBean
@@ -293,6 +295,8 @@ interface RepoChangingReasonRepository : MyBaseRepository<RepoChangingReason, In
 interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
     // @Query("select * from repo_changing b where b.order_id = ?1", nativeQuery = true)
     fun findByType(@Param("type") type: Int): List<RepoChanging>
+
+    fun findByType(@Param("type") type: Int, pageable: Pageable): Page<RepoChanging>
 
     fun findByTypeAndStatus(@Param("type") type: Int, @Param("status") status: Int): List<RepoChanging>
 
