@@ -106,7 +106,11 @@ interface OrderRepository : MyBaseRepository<Order, Long> {
 
     fun findByStatusEquals(@Param("status") status: Int): List<Order>
 
+    fun findByStatusIn(status: Collection<Int>): List<Order>
+
     fun findByClientAndStatus(client: Client, status: Int): List<Order>
+
+    fun findByClientAndStatusIn(client: Client, status: Collection<Int>): List<Order>
 
     fun findByClientAndStatusAndDeliveryDateBefore(client: Client, status: Int,
                                                    @Param("date")
@@ -335,11 +339,11 @@ interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
 @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
 // POST {"id": {"repoChanging": 0, "material": 0}, "repoChanging": {"id":1}, "material": {"id":6}, "quantity": -1.3, "price": 4.4}
 interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, RepoChangingItemKey> {
-    @Query("SELECT ci.* FROM hly.repo_changing_item ci join repo_changing c on ci.repo_changing_id=c.id " +
+    @Query("SELECT ci.* FROM repo_changing_item ci join repo_changing c on ci.repo_changing_id=c.id " +
             "where c.type=-1 and c.reason_id=:reason", nativeQuery = true)
     fun findStockOutByReasonId(@Param("reason") reason: Int): List<RepoChangingItem>
 
-    @Query("SELECT ci.* FROM hly.repo_changing_item ci join repo_changing c on ci.repo_changing_id=c.id " +
+    @Query("SELECT ci.* FROM repo_changing_item ci join repo_changing c on ci.repo_changing_id=c.id " +
             "where c.type=1 and c.reason_id=:reason", nativeQuery = true)
     fun findStockInByReasonId(@Param("reason") reason: Int): List<RepoChangingItem>
 
@@ -347,6 +351,19 @@ interface RepoChangingItemRepository : MyBaseRepository<RepoChangingItem, RepoCh
     fun getTotalQuantityByRepoChangingId(@Param("id") id: Int): Int
 }
 
+@RequiresPermissions(value = ["repo:inventory:read"])
+interface RepoSnapshotRepository : MyBaseRepository<RepoSnapshot, RepoSnapshotKey> {
+    @Query("SELECT * FROM repo_snapshot where time=date_format(:d, '%Y-%m-01')", nativeQuery = true)
+    fun findByDate(@Param("d")
+                   @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                   date: Date): List<RepoSnapshot>
+
+    @Query("SELECT * FROM repo_snapshot where time=date_format(:d, '%Y-%m-01') and repo_id=:r", nativeQuery = true)
+    fun findByRepoAndDate(@Param("r") repo: Int,
+                          @Param("d")
+                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                          date: Date): List<RepoSnapshot>
+}
 
 @RequiresPermissions(value = ["system:user-management:read"])
 interface RoleRepository : MyBaseRepository<Role, Int> {

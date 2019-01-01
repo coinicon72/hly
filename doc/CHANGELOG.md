@@ -1,3 +1,11 @@
+# 1.2.3 2019-01-01
++ [x] [ADD] `RepoSnapshot`，库存统计
+
+
+# 1.2.2 2018-12-15
++ [x] [ADD] `OrderRepository#findByStatusIn`
+
+
 # 1.2.1 2018-12-13
 + [x] [CHANGE] `/api/orders`出现无限循环情况
 

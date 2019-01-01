@@ -752,8 +752,9 @@ interface InlineOrderItemAndFormulaType {
     fun getId(): OrderItemKey
     fun getCreateDate(): Date
     fun getFormula(): Formula
-//    fun getOrderItem(): OrderItem
+    //    fun getOrderItem(): OrderItem
     fun getProducingSchedule(): ProducingSchedule
+
     fun getItems(): List<BomItem>
 }
 
@@ -918,6 +919,37 @@ data class RepoItemKey(
         val material: Long = 0
 ) : Serializable
 
+
+@Entity
+data class RepoSnapshot(
+        @EmbeddedId
+        val id: RepoSnapshotKey,
+
+        @MapsId(value = "repo")
+        @ManyToOne
+//        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_item_repo"))
+        val repo: Repo? = null,
+
+        @MapsId(value = "material")
+        @ManyToOne
+//        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_item_material"))
+        val material: Material? = null,
+
+        val quantityIn: Float,
+        val valueIn: Float,
+        val quantityOut: Float,
+        val valueOut: Float,
+        val quantity: Float,
+        val price: Float,
+        val value: Float
+)
+
+@Embeddable
+data class RepoSnapshotKey(
+        val time: Date,
+        val repo: Int,
+        val material: Long
+) : Serializable
 
 @Entity
 data class Inventory(
@@ -1091,9 +1123,17 @@ data class RepoChanging(
 //        @JsonManagedReference
         val items: MutableList<RepoChangingItem> = mutableListOf()
 ) {
-//    @Transient
+    //    @Transient
     val totalQuantity: Float
         get() = this.items.map { it.quantity }.sum()
+
+    val totalValue: Float?
+        get() {
+            return if (this.reason?.id != 1)// || this.purchasingOrder == null)
+                null
+            else
+                this.items.map { it.quantity * it.price }.sum()
+        }
 }
 
 
