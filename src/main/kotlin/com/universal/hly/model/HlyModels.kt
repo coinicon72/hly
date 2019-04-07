@@ -952,14 +952,32 @@ data class RepoSnapshotKey(
 ) : Serializable
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class Inventory(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         val id: Int,
 
+        @ManyToOne
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_inventory_repo"))
+        val repo: Repo? = null,
+
         val date: Date = Date(),
 
-        val comment: String? = null
+        val comment: String? = null,
+
+        @ManyToOne
+        @JoinColumn(name = "report_by", foreignKey = ForeignKey(name = "fk_inventory_report_by"))
+        val reportBy: User? = null,
+
+        @ManyToOne
+        @JoinColumn(name = "audit_by", foreignKey = ForeignKey(name = "fk_inventory_audit_by"))
+        val auditBy: User? = null,
+
+        /**
+         * 0-created; 1-committed; 2-audited
+         */
+        val status: Int = 0
 )
 
 
@@ -973,6 +991,11 @@ data class RepoHistory(
         @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_history_inventory"))
         val inventory: Inventory? = null,
 
+        @MapsId(value = "repo")
+        @ManyToOne
+        @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_history_repo"))
+        val repo: Repo? = null,
+
         @MapsId(value = "material")
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_history_material"))
@@ -985,6 +1008,7 @@ data class RepoHistory(
 @Embeddable
 data class RepoHistoryKey(
         val inventory: Int = 0,
+        val repo: Int = 0,
         val material: Long = 0
 ) : Serializable
 
@@ -1308,7 +1332,7 @@ data class Organization(
                 ]
         )
 )
-
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class User(
         @Id
         val id: Int,
@@ -1334,6 +1358,8 @@ data class User(
 
 
 @Entity
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class Role(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -1343,7 +1369,6 @@ data class Role(
 
         val name: String? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
 
         @ManyToMany//(fetch = FetchType.EAGER)
@@ -1356,6 +1381,8 @@ data class Role(
 
 
 @Entity
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator::class, property = "id")
 data class Privilege(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -1365,7 +1392,6 @@ data class Privilege(
 
         val name: String? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null
 )
 
@@ -1376,6 +1402,7 @@ data class Privilege(
 //select si.settlement_id, round(sum(o.value), 2) from `order` o join collecting_settlement_item si on o.id = si.order_id group by si.settlement_id;
 
 @Entity
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class CollectingSettlement(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -1398,16 +1425,12 @@ data class CollectingSettlement(
 
         @ManyToOne
         @JoinColumn(name = "collected_by")
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val collectedBy: User? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val collectedDate: Date? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val collectedValue: Float? = null,
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
         val comment: String? = null,
 
         @OneToMany(mappedBy = "settlement", cascade = [CascadeType.PERSIST])

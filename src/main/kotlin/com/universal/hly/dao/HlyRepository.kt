@@ -630,12 +630,12 @@ class RepoHistoryKeyConverter : BackendIdConverter {
         if (id == null) return null
 
         val parts = id.split("_")
-        return RepoHistoryKey(parts[0].toInt(), parts[1].toLong())
+        return RepoHistoryKey(parts[0].toInt(), parts[1].toInt(), parts[2].toLong())
     }
 
     override fun toRequestId(source: Serializable, entityType: Class<*>): String {
         val id: RepoHistoryKey = source as RepoHistoryKey
-        return String.format("%s_%s", id.inventory, id.material)
+        return String.format("%s_%s_%s", id.inventory, id.repo, id.material)
     }
 
     override fun supports(type: Class<*>): Boolean {
