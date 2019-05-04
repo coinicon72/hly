@@ -240,6 +240,9 @@ interface BomRepository : MyBaseRepository<Bom, OrderItemKey> {
     //BomKey> {
     @Query("select * from bom b join order_item oi on b.order_id = oi.order_id and b.product_id = oi.product_id where oi.order_id = ?1", nativeQuery = true)
     fun findByOrderId(@Param("oid") oid: Long): List<Bom>
+
+    @Query("select b.* from bom b join `order` o on b.order_id = o.id and o.status in ?1", nativeQuery = true)
+    fun findByOrderStatus(@Param("status") status: Collection<Int>): List<Bom>
 }
 
 
@@ -298,8 +301,8 @@ interface RepoChangingReasonRepository : MyBaseRepository<RepoChangingReason, In
 // POST {"type": 2, "applicant": "whoelse", "keeper": "kevin", "amount": 4.4}
 interface RepoChangingRepository : MyBaseRepository<RepoChanging, Int> {
     // @Query("select * from repo_changing b where b.order_id = ?1", nativeQuery = true)
-    fun findByType(@Param("type") type: Int): List<RepoChanging>
-
+//    fun findByType(@Param("type") type: Int): List<RepoChanging>
+//
     fun findByType(@Param("type") type: Int, pageable: Pageable): Page<RepoChanging>
 
     fun findByTypeAndStatus(@Param("type") type: Int, @Param("status") status: Int): List<RepoChanging>

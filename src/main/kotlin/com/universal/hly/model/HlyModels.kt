@@ -88,7 +88,7 @@ data class Client(
         @Column(length = 500)
         val metadata: String? = null,
 
-        @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)//, cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
+        @OneToMany(mappedBy = "client")//, fetch = FetchType.LAZY)//, cascade = [CascadeType.ALL]) // mappedBy is the key to remove join table
 //        @JsonManagedReference
         val orders: MutableList<Order> = mutableListOf()
 ) {
@@ -200,7 +200,7 @@ data class OrderItem(
 
 ////        @Id
 //        @MapsId("product")
-        @ManyToOne(fetch = FetchType.EAGER)
+        @ManyToOne//(fetch = FetchType.EAGER)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_order_item_product"), insertable = false, updatable = false)
         val product: Product,
 
@@ -212,13 +212,13 @@ data class OrderItem(
         val price: Float = 0f,
 
 //        @OneToOne(mappedBy = "orderItem")
-//        @JsonManagedReference
+//        @JsonManagedReference("orderItem-producingSchedule")
         @OneToOne(cascade = [CascadeType.ALL])
         @PrimaryKeyJoinColumns
         val producingSchedule: ProducingSchedule? = null,
 
         @OneToOne//(mappedBy = "orderItem")
-//        @JsonManagedReference
+//        @JsonManagedReference("orderItem-bom")
         @PrimaryKeyJoinColumns
         val bom: Bom? = null
 ) : Serializable
@@ -255,7 +255,7 @@ data class Product(
         @OneToOne
 //        @JoinColumn(name = "id")
         @PrimaryKeyJoinColumn(name = "id")
-        @JsonManagedReference
+//        @JsonManagedReference("product-material")
         val material: Material? = null,
 
 //        @NaturalId
@@ -284,7 +284,7 @@ data class Product(
 //        @JoinColumn(foreignKey = ForeignKey(name = "fk_product_formula"))
 //        val formula: Formula
         @OneToMany(mappedBy = "product", cascade = [CascadeType.REMOVE], orphanRemoval = true)
-        @JsonManagedReference
+//        @JsonManagedReference("product-formulas")
         val formulas: List<Formula> = LinkedList()
 )
 
@@ -334,7 +334,7 @@ data class DeliverySheet(
 
         val no: String? = null,
 
-        @ManyToOne//(fetch = FetchType.EAGER)
+        @ManyToOne //(fetch = FetchType.EAGER)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_delivery_sheet_order"))
         val order: Order? = null,
 
@@ -365,7 +365,7 @@ data class DeliverySheet(
         var deliveryOn: Date? = null,
 
         @OneToMany(mappedBy = "deliverySheet")
-        @JsonManagedReference
+//        @JsonManagedReference
         val items: MutableList<DeliverySheetItem> = mutableListOf(),
 
 //        @OneToMany(mappedBy = "deliverySheet")
@@ -398,7 +398,7 @@ data class DeliverySheetItem(
         @MapsId(value = "deliverySheet")
         @ManyToOne
 //        @JoinColumn(name = "id")
-        @JsonBackReference
+//        @JsonBackReference
         val deliverySheet: DeliverySheet? = null,
 
         @MapsId(value = "orderItem")
@@ -440,10 +440,10 @@ data class Formula(
         val revision: Int = 0,
 
 //        @MapsId
-        @ManyToOne(fetch = FetchType.LAZY)
+        @ManyToOne//(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_rev_product"))
 //        @Column(insertable = false, updatable = false)
-        @JsonBackReference
+//        @JsonBackReference
         val product: Product? = null,
 //        val formula: Formula,
 
@@ -462,7 +462,7 @@ data class Formula(
 //        @JoinColumn(name = "produce_condition", foreignKey = ForeignKey(name = "fk_product_produce_cond"))
         @PrimaryKeyJoinColumn
         @OnDelete(action = OnDeleteAction.CASCADE)
-        @JsonManagedReference
+//        @JsonManagedReference
         var produceCondition: ProduceCondition? = null,
 
         @OneToMany(mappedBy = "formula", cascade = [CascadeType.REMOVE])
@@ -485,9 +485,9 @@ data class ProduceCondition(
         val id: Long? = null,
 
         @MapsId
-        @OneToOne(fetch = FetchType.LAZY)
+        @OneToOne//(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
-        @JsonBackReference
+//        @JsonBackReference
         val formula: Formula? = null,
 
         @Column(nullable = false)
@@ -534,7 +534,7 @@ data class FormulaItem(
         val id: FormulaItemKey,
 
         @MapsId("formula")
-        @ManyToOne(fetch = FetchType.LAZY)
+        @ManyToOne//(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_item_formula"))
 //        @JoinColumns(value = [JoinColumn(name = "product_id", referencedColumnName = "product_id"),
 //            JoinColumn(name = "formula_revision", referencedColumnName = "revision")])
@@ -619,7 +619,7 @@ data class Material(
         val metadata: String? = null,
 
         @OneToOne(mappedBy = "material")
-        @JsonBackReference
+//        @JsonBackReference
         val product: Product? = null
 ) : Serializable
 
@@ -673,7 +673,7 @@ data class ProducingSchedule(
 //                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
 ////        @PrimaryKeyJoinColumns(PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
 ////                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id"))
-//        @JsonBackReference
+//        @JsonBackReference("orderItem-producingSchedule")
         @OneToOne
         @PrimaryKeyJoinColumns//(foreignKey = ForeignKey(name = "fk_prodsch_orderitem"))
         var orderItem: OrderItem? = null,
@@ -687,6 +687,7 @@ data class ProducingSchedule(
         @Column()
         val line: String?,
 
+//        @JsonBackReference("bom-producingSchedule")
         @OneToOne(cascade = [CascadeType.ALL])
         @PrimaryKeyJoinColumns
 //        @PrimaryKeyJoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
@@ -713,15 +714,16 @@ data class Bom(
 
 //       @Id
 //        @MapsId
-        @OneToOne(fetch = FetchType.EAGER)
+        @OneToOne//(fetch = FetchType.EAGER)
         @PrimaryKeyJoinColumns
 //        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
 //                JoinColumn(name = "product_id", referencedColumnName = "product_id"))
 //        @PrimaryKeyJoinColumns(PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
 //                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id"))
-//        @JsonBackReference
+//        @JsonBackReference("orderItem-bom")
         var orderItem: OrderItem? = null,
 
+//        @JsonManagedReference("bom-producingSchedule")
         @OneToOne
         @PrimaryKeyJoinColumns(value = [PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
             PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id")],
@@ -1093,7 +1095,7 @@ data class RepoChanging(
         @NaturalId
         val no: String? = null,
 
-        @ManyToOne(fetch = FetchType.EAGER)
+        @ManyToOne//(fetch = FetchType.EAGER)
         val repo: Repo? = null,
 
         /**
@@ -1114,22 +1116,35 @@ data class RepoChanging(
 
         val applyingDate: Date? = null,
 
-        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+        @ManyToOne(optional = true)//, fetch = FetchType.EAGER)
         val reason: RepoChangingReason? = null,
 
 //        @Column(name = "reason")
         val reasonDetail: String? = null,
 
-        @OneToOne(optional = true, fetch = FetchType.EAGER)
+        @OneToOne(optional = true)//, fetch = FetchType.EAGER)
         val purchasingOrder: PurchasingOrder? = null,
 
-        @ManyToOne(optional = true, fetch = FetchType.EAGER)
+        @ManyToOne(optional = true)//, fetch = FetchType.EAGER)
+//        @PrimaryKeyJoinColumn(name="order_id")
+        @JoinColumn(name="order_id", insertable= false, updatable=false)
         var order: Order? = null,
+
+        @ManyToOne(optional = true)//, fetch = FetchType.EAGER)
+//        @PrimaryKeyJoinColumns (value = [PrimaryKeyJoinColumn(name = "order_id", referencedColumnName = "order_id"),
+//                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id")])
+        // @JoinColumns(value = [JoinColumn(name = "order_id", referencedColumnName = "order_id"),
+        //         JoinColumn(name = "product_id", referencedColumnName = "product_id")])
+         @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
+                 JoinColumn(name = "product_id", referencedColumnName = "product_id")
+         )
+        // var orderItem: OrderItem? = null,
+        var bom: Bom? = null,
 
 //        @ManyToOne(optional = true, fetch = FetchType.EAGER)
 //        @JoinColumn(name = "delivery_id")
 //        val deliverySheet: DeliverySheet? = null,
-        @OneToOne(optional = true, fetch = FetchType.EAGER)
+        @OneToOne(optional = true)//, fetch = FetchType.EAGER)
         @JoinColumn(name = "delivery_id")
         val deliverySheet: DeliverySheet? = null,
 
@@ -1434,7 +1449,7 @@ data class CollectingSettlement(
         val comment: String? = null,
 
         @OneToMany(mappedBy = "settlement", cascade = [CascadeType.PERSIST])
-        @JsonManagedReference
+//        @JsonManagedReference
         val items: List<CollectingSettlementItem> = ArrayList()
 )
 
@@ -1474,7 +1489,7 @@ data class CollectingSettlementItem(
         @MapsId("settlement")
         @ManyToOne
 //        @JoinColumn(name = "settlement_id")
-        @JsonBackReference
+//        @JsonBackReference
         var settlement: CollectingSettlement? = null,
 
         @MapsId("order")

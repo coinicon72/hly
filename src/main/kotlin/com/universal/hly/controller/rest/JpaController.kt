@@ -54,6 +54,9 @@ class RepoChangingController {
     lateinit var repoRepository: RepoRepository
 
     @Autowired
+    lateinit var bomRepository: BomRepository
+
+    @Autowired
     lateinit var repoHistoryRepository: RepoHistoryRepository
 
     @Autowired
@@ -73,6 +76,17 @@ class RepoChangingController {
 
 //    @Autowired
 //    lateinit var productRepository: ProductRepository
+
+
+    @GetMapping("/boms")
+//    @RequiresPermissions("document:read")
+    fun listBomsByOrderStatus(@RequestParam (value = "status") status: Collection<Int>): List<Bom> {
+        val boms = bomRepository.findByOrderStatus(status)
+
+//        boms.forEach { it.orderItem?.bom = null }
+
+        return boms
+    }
 
 
     @GetMapping("/previewStockIn/{cid}")
@@ -347,7 +361,8 @@ class RepoChangingController {
         deliverySheet.status = 2
 
         val repoSheet = request.copy(status = 1, type = -1, applicant = user,
-                order = deliverySheet.order, deliverySheet = deliverySheet,
+                order = deliverySheet.order, 
+                deliverySheet = deliverySheet,
                 createDate = Date(), items = mutableListOf())
 
         deliverySheet.items.forEach {
@@ -463,7 +478,8 @@ class RepoChangingController {
             it.deliverySheets.forEach { sheet ->
                 sheet.items.size
 
-                sheet.repoChanging?.applicant?.roles?.clear()
+//                sheet.repoChanging?.applicant?.roles?.clear()
+                cleanStockChanging(sheet.repoChanging)
             }
         }
 
@@ -497,7 +513,9 @@ class RepoChangingController {
 
         val changings = repoChangingRepository.findByTypeAndApplicant(-1, user)
 
-//        changings.forEach { it.items.size }
+        changings.forEach {
+            cleanStockChanging(it)
+        }
 
         return changings
     }
@@ -512,7 +530,10 @@ class RepoChangingController {
 
         val changings = repoChangingRepository.findByType(-1, PageRequest.of(p, s))
 
-        changings.forEach { it.items.size }
+        changings.forEach {
+            it.items.size
+            cleanStockChanging(it)
+        }
 
         return changings.content
     }
@@ -524,7 +545,9 @@ class RepoChangingController {
 
         val changings = repoChangingRepository.findByTypeAndStatus(-1, -1)
 
-//        changings.forEach { it.items.size }
+        changings.forEach {
+            cleanStockChanging(it)
+        }
 
         return changings
     }
@@ -576,9 +599,38 @@ class RepoChangingController {
 
         val changings = repoChangingRepository.findStockInOutByStatusNot(0)
 
-//        changings.forEach { it.items.size }
+        changings.forEach {
+            cleanStockChanging(it)
+        }
 
         return changings
+    }
+
+    @RequiresPermissions(value = ["repo:stock-in:read", "repo:stock-out:read"], logical = Logical.OR)
+    @GetMapping("/stock-changing/{id}")
+    fun getStockChangingById(@PathVariable(value = "id") id: Int): ResponseEntity<RepoChanging> {
+//        val user: User = SecurityUtils.getSubject().principal as User
+
+        val r = repoChangingRepository.findById(id)
+        return if (r.isPresent) {
+            val changing = r.get()
+            cleanStockChanging(changing)
+
+            ResponseEntity.ok(changing)
+        }
+        else
+            ResponseEntity.notFound().build()
+    }
+
+    private fun cleanStockChanging(changing: RepoChanging?) {
+        changing ?: return
+
+//        changing.applicant?.roles?.clear()
+//        changing.order?.client?.orders?.clear()
+//        changing.order?.items?.clear()
+//        changing.bom?.orderItem = null
+//        changing.bom?.producingSchedule = null
+//        changing.deliverySheet?.items?.clear()
     }
 }
 
