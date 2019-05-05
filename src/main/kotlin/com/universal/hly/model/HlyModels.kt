@@ -175,7 +175,7 @@ data class Order(
 
 
         @OneToMany(mappedBy = "order")
-        val deliverySheets: List<DeliverySheet> = listOf()
+        val deliverySheets: MutableList<DeliverySheet> = mutableListOf()
 ) {
     override fun toString(): String {
         return "Order(id=$id, no='$no', orderDate=$orderDate, deliveryDate=$deliveryDate, tax=$tax, value=$value, actualValue=$actualValue, comment=$comment, metadata=$metadata, status=$status)"
@@ -215,12 +215,12 @@ data class OrderItem(
 //        @JsonManagedReference("orderItem-producingSchedule")
         @OneToOne(cascade = [CascadeType.ALL])
         @PrimaryKeyJoinColumns
-        val producingSchedule: ProducingSchedule? = null,
+        var producingSchedule: ProducingSchedule? = null,
 
         @OneToOne//(mappedBy = "orderItem")
 //        @JsonManagedReference("orderItem-bom")
         @PrimaryKeyJoinColumns
-        val bom: Bom? = null
+        var bom: Bom? = null
 ) : Serializable
 
 
@@ -256,7 +256,7 @@ data class Product(
 //        @JoinColumn(name = "id")
         @PrimaryKeyJoinColumn(name = "id")
 //        @JsonManagedReference("product-material")
-        val material: Material? = null,
+        var material: Material? = null,
 
 //        @NaturalId
         @Column(nullable = false, length = 20)
@@ -285,7 +285,7 @@ data class Product(
 //        val formula: Formula
         @OneToMany(mappedBy = "product", cascade = [CascadeType.REMOVE], orphanRemoval = true)
 //        @JsonManagedReference("product-formulas")
-        val formulas: List<Formula> = LinkedList()
+        val formulas: MutableList<Formula> = mutableListOf()
 )
 
 
@@ -486,7 +486,8 @@ data class ProduceCondition(
 
         @MapsId
         @OneToOne//(fetch = FetchType.LAZY)
-        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
+//        @JoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
+        @PrimaryKeyJoinColumn(foreignKey = ForeignKey(name = "fk_formula_produce_cond"))
 //        @JsonBackReference
         val formula: Formula? = null,
 
@@ -620,7 +621,7 @@ data class Material(
 
         @OneToOne(mappedBy = "material")
 //        @JsonBackReference
-        val product: Product? = null
+        var product: Product? = null
 ) : Serializable
 
 @Projection(name = "InlineMaterialType", types = [Material::class])
@@ -733,7 +734,7 @@ data class Bom(
 
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_bom_formula_id"))
-        val formula: Formula? = null,
+        var formula: Formula? = null,
 
         @Column(nullable = false, columnDefinition = "datetime default now()")
         val createDate: Date = Date(),

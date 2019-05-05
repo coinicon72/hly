@@ -279,6 +279,9 @@ class RepoChangingController {
             it.items.clear()
             it.order?.client?.orders?.clear()
             it.order?.items?.clear()
+
+            it.repoChanging?.bom = null
+
             it.createdBy?.roles?.clear()
             it.committedBy?.roles?.clear()
         }
@@ -367,7 +370,7 @@ class RepoChangingController {
 
         deliverySheet.items.forEach {
             val repoChangingItem = RepoChangingItem(RepoChangingItemKey(repoSheet.id, it.orderItem?.product?.material?.id!!),
-                    repoChanging = repoSheet, material = it.orderItem.product.material,
+                    repoChanging = repoSheet, material = it.orderItem.product.material!!,
                     quantity = it.quantity)
             repoSheet.items.add(repoChangingItem)
 //            entityManager.persist(repoChangingItem)
@@ -446,6 +449,10 @@ class RepoChangingController {
 
         orders.forEach {
             it.items.size
+
+            it.items.forEach { oi ->
+                oi.material?.product = null
+            }
         }
 
         //
@@ -467,11 +474,21 @@ class RepoChangingController {
         orders.forEach {
             it.client?.orders?.clear()
 
+            it.deliverySheets.clear()
+
             it.items.size
             it.items.forEach { oi ->
-                oi.producingSchedule?.orderItem = null
-                oi.producingSchedule?.bom?.orderItem = null
-                oi.producingSchedule?.bom?.producingSchedule = null
+//                oi.producingSchedule?.orderItem = null
+//                oi.producingSchedule?.bom?.orderItem = null
+//                oi.producingSchedule?.bom?.producingSchedule = null
+                oi.producingSchedule = null
+
+//                oi.bom?.orderItem = null
+//                oi.bom?.producingSchedule = null
+                oi.bom = null
+
+                oi.product.material?.product = null
+                oi.product.formulas.clear()
             }
 
             it.deliverySheets.size
@@ -575,7 +592,11 @@ class RepoChangingController {
 
         val changings = repoChangingRepository.findByType(1, PageRequest.of(p, s))
 
-        changings.forEach { it.items.size }
+        changings.forEach {
+            it.items.size
+
+            cleanStockChanging(it)
+        }
 
         return changings.content
     }
@@ -625,12 +646,17 @@ class RepoChangingController {
     private fun cleanStockChanging(changing: RepoChanging?) {
         changing ?: return
 
-//        changing.applicant?.roles?.clear()
-//        changing.order?.client?.orders?.clear()
-//        changing.order?.items?.clear()
-//        changing.bom?.orderItem = null
-//        changing.bom?.producingSchedule = null
-//        changing.deliverySheet?.items?.clear()
+        changing.applicant?.roles?.clear()
+        changing.order?.client?.orders?.clear()
+        changing.order?.items?.clear()
+        changing.bom?.orderItem = null
+        changing.bom?.producingSchedule = null
+        changing.bom?.formula = null
+        changing.deliverySheet?.items?.clear()
+
+        changing.items.forEach {
+            it.material.product = null
+        }
     }
 }
 
