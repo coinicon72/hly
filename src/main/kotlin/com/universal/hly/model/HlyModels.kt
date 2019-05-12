@@ -965,7 +965,7 @@ data class Inventory(
         @JoinColumn(foreignKey = ForeignKey(name = "fk_inventory_repo"))
         val repo: Repo? = null,
 
-        val date: Date = Date(),
+        val createDate: Date = Date(),
 
         val comment: String? = null,
 
@@ -973,9 +973,13 @@ data class Inventory(
         @JoinColumn(name = "report_by", foreignKey = ForeignKey(name = "fk_inventory_report_by"))
         val reportBy: User? = null,
 
+        val reportDate: Date? = null,
+
         @ManyToOne
         @JoinColumn(name = "audit_by", foreignKey = ForeignKey(name = "fk_inventory_audit_by"))
         val auditBy: User? = null,
+
+        val auditDate: Date? = null,
 
         /**
          * 0-created; 1-committed; 2-audited

@@ -649,7 +649,11 @@ class RepoChangingController {
         changing.applicant?.roles?.clear()
         changing.order?.client?.orders?.clear()
         changing.order?.items?.clear()
-        changing.bom?.orderItem = null
+
+        changing.bom?.orderItem?.bom = null
+        changing.bom?.orderItem?.product?.material = null
+        changing.bom?.orderItem?.producingSchedule = null
+
         changing.bom?.producingSchedule = null
         changing.bom?.formula = null
         changing.deliverySheet?.items?.clear()

@@ -22,13 +22,14 @@ spring:
 #    hibernate:
 #      ddl-auto: create-drop #update #create # none # validate # update # create-drop
 
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL57Dialect
+#    properties:
+#      hibernate:
+#        dialect: org.hibernate.dialect.MySQL57Dialect
 
   datasource:
-    url:      jdbc:mysql://127.0.0.1/hly?useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
+#    url:      jdbc:mysql://127.0.0.1/hly?useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
 #    url:      jdbc:mysql://127.0.0.1/hly2?useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
+    url:      jdbc:mysql://192.168.1.168/kevin_hly?autoReconnect=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&noAccessToProcedureBodies=true&serverTimezone=CST
     username: hly
     password: hly
     driver-class-name: com.mysql.cj.jdbc.Driver
