@@ -662,6 +662,39 @@ class RepoChangingController {
             it.material.product = null
         }
     }
+
+
+    @PostMapping("/inventory")
+    @Transactional
+    fun saveInventory(@RequestBody inventory: Inventory): Boolean {
+        inventoryRepository.save(inventory)
+
+        inventory.items.forEach {
+            it.id.inventory = inventory.id
+            it.inventory = inventory
+        }
+
+        repoHistoryRepository.saveAll(inventory.items)
+
+        return true
+    }
+
+
+    @PutMapping("/inventory/{id}")
+    @Transactional
+    fun updateInventory(@PathVariable(value = "id") id: Int, @RequestBody inventory: Inventory): Boolean {
+        inventory.id = id
+        inventory.items.forEach {
+            it.id.inventory = id
+            it.inventory = Inventory(id)
+        }
+
+        inventoryRepository.save(inventory)
+
+        repoHistoryRepository.saveAll(inventory.items)
+
+        return true
+    }
 }
 
 data class ApplyStockChanging(

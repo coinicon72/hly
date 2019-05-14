@@ -959,12 +959,14 @@ data class RepoSnapshotKey(
 data class Inventory(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
-        val id: Int,
+        var id: Int,
 
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_inventory_repo"))
         val repo: Repo? = null,
 
+        @Temporal(TemporalType.DATE)
+        @Column(nullable = false, insertable = false, updatable = false)
         val createDate: Date = Date(),
 
         val comment: String? = null,
@@ -984,7 +986,11 @@ data class Inventory(
         /**
          * 0-created; 1-committed; 2-audited
          */
-        val status: Int = 0
+        val status: Int = 0,
+
+        @OneToMany(mappedBy = "inventory")
+        @JsonManagedReference
+        val items: MutableList<RepoHistory> = mutableListOf()
 )
 
 
@@ -996,7 +1002,8 @@ data class RepoHistory(
         @MapsId(value = "inventory")
         @ManyToOne
         @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_history_inventory"))
-        val inventory: Inventory? = null,
+        @JsonBackReference
+        var inventory: Inventory? = null,
 
         @MapsId(value = "repo")
         @ManyToOne
@@ -1014,7 +1021,7 @@ data class RepoHistory(
 
 @Embeddable
 data class RepoHistoryKey(
-        val inventory: Int = 0,
+        var inventory: Int = 0,
         val repo: Int = 0,
         val material: Long = 0
 ) : Serializable
