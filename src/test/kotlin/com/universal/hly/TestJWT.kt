@@ -3,14 +3,15 @@ package com.universal.hly
 import com.universal.hly.security.getUserIdFromJWT
 import com.universal.hly.security.signJWT
 import com.universal.hly.security.verifyJWT
-import org.junit.Assert
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.context.junit4.SpringRunner
 
 @SpringBootTest
-@RunWith(SpringRunner::class)
+@ExtendWith(SpringExtension::class)
 class TestJWT {
 
     val uid = 1
@@ -20,11 +21,11 @@ class TestJWT {
     fun testSignJWT() {
         val jwt = signJWT(uid, secret) ?: throw RuntimeException("signJWT failed")
 
-        Assert.assertNotNull(jwt)
+        assertNotNull(jwt)
 
-        Assert.assertTrue(verifyJWT(jwt, uid, secret))
+        assertTrue(verifyJWT(jwt, uid, secret))
 
-        Assert.assertEquals(getUserIdFromJWT(jwt), uid)
+        assertEquals(getUserIdFromJWT(jwt), uid)
     }
 }
 

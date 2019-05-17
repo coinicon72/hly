@@ -592,7 +592,7 @@ data class FormulaItemKey(
 data class Material(
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
-        val id: Long? = null,
+        val id: Long = 0,
 
         @NaturalId
         @Column(length = 20)
@@ -975,7 +975,7 @@ data class Inventory(
         @JoinColumn(name = "report_by", foreignKey = ForeignKey(name = "fk_inventory_report_by"))
         val reportBy: User? = null,
 
-        val reportDate: Date? = null,
+        var reportDate: Date? = null,
 
         @ManyToOne
         @JoinColumn(name = "audit_by", foreignKey = ForeignKey(name = "fk_inventory_audit_by"))
@@ -986,21 +986,46 @@ data class Inventory(
         /**
          * 0-created; 1-committed; 2-audited
          */
-        val status: Int = 0,
+        var status: Int = 0,
 
-        @OneToMany(mappedBy = "inventory")
+        @OneToMany(mappedBy = "inventory", cascade = [CascadeType.ALL])
         @JsonManagedReference
-        val items: MutableList<RepoHistory> = mutableListOf()
-)
+        var items: MutableList<RepoHistory> = mutableListOf()
+) {
+    fun addItem(item: RepoHistory) {
+        item.inventory = this
+
+        //
+        if (item.inventory != null)
+            item.id.inventory = item.inventory!!.id
+
+        if (item.repo != null)
+            item.id.repo = item.repo.id
+
+        if (item.material != null)
+            item.id.material = item.material.id
+//
+//        items.remove(item)
+
+        //
+        items.add(item)
+    }
+
+    fun addItems(items: List<RepoHistory>) {
+        items.forEach {
+            addItem(it)
+        }
+    }
+}
 
 
 @Entity
 data class RepoHistory(
         @EmbeddedId
-        val id: RepoHistoryKey,
+        val id: RepoHistoryKey = RepoHistoryKey(),
 
         @MapsId(value = "inventory")
-        @ManyToOne
+        @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(foreignKey = ForeignKey(name = "fk_repo_history_inventory"))
         @JsonBackReference
         var inventory: Inventory? = null,
@@ -1017,14 +1042,40 @@ data class RepoHistory(
 
         val quantity: Float = 0f,
         val price: Float = 0f
-) : Serializable
+) : Serializable {
+    override fun equals(other: Any?): Boolean {
+        if (other !is RepoHistory)
+            return false
+
+        return other.id == this.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+}
 
 @Embeddable
 data class RepoHistoryKey(
         var inventory: Int = 0,
-        val repo: Int = 0,
-        val material: Long = 0
-) : Serializable
+        var repo: Int = 0,
+        var material: Long = 0
+) : Serializable {
+    override fun equals(other: Any?): Boolean {
+        if (other !is RepoHistoryKey)
+            return false
+
+//        return other.inventory == this.inventory && other.repo == this.repo && other.material == this.material
+        return other.hashCode() == this.hashCode()
+    }
+
+    override fun hashCode(): Int {
+        var result = inventory
+        result = 31 * result + repo
+        result = 31 * result + material.hashCode()
+        return result
+    }
+}
 
 
 @Entity
@@ -1139,7 +1190,7 @@ data class RepoChanging(
 
         @ManyToOne(optional = true)//, fetch = FetchType.EAGER)
 //        @PrimaryKeyJoinColumn(name="order_id")
-        @JoinColumn(name="order_id", insertable= false, updatable=false)
+        @JoinColumn(name = "order_id", insertable = false, updatable = false)
         var order: Order? = null,
 
         @ManyToOne(optional = true)//, fetch = FetchType.EAGER)
@@ -1147,9 +1198,9 @@ data class RepoChanging(
 //                PrimaryKeyJoinColumn(name = "product_id", referencedColumnName = "product_id")])
         // @JoinColumns(value = [JoinColumn(name = "order_id", referencedColumnName = "order_id"),
         //         JoinColumn(name = "product_id", referencedColumnName = "product_id")])
-         @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
-                 JoinColumn(name = "product_id", referencedColumnName = "product_id")
-         )
+        @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id"),
+                JoinColumn(name = "product_id", referencedColumnName = "product_id")
+        )
         // var orderItem: OrderItem? = null,
         var bom: Bom? = null,
 

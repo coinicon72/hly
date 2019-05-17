@@ -3,13 +3,15 @@ package com.universal.hly
 import com.universal.hly.dao.FormulaItemRepository
 import com.universal.hly.dao.UserRepository
 import com.universal.hly.model.User
-import org.junit.Assert
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.context.junit4.SpringRunner
 
 /**
@@ -19,7 +21,7 @@ import org.springframework.test.context.junit4.SpringRunner
 //@ContextConfiguration
 @SpringBootTest(classes = [Application::class])
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@RunWith(SpringRunner::class)
+@ExtendWith(SpringExtension::class)
 @DataJpaTest
 class TestJpa {
     @Autowired
@@ -43,11 +45,11 @@ class TestJpa {
 //        Assert.assertNull(u1)
 
         val u2 = userRepository.findById(20).get()
-        Assert.assertNotNull(u2)
-        Assert.assertEquals(u2.name, "陈锦海")
+        assertNotNull(u2)
+        assertEquals(u2.name, "陈锦海")
 
         val u3 = userRepository.getByPhone("15917885784")
-        Assert.assertNotNull(u3)
-        Assert.assertEquals(u3?.name, "邱谷娣")
+        assertNotNull(u3)
+        assertEquals(u3?.name, "邱谷娣")
     }
 }

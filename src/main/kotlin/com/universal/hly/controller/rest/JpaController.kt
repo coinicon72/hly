@@ -80,7 +80,7 @@ class RepoChangingController {
 
     @GetMapping("/boms")
 //    @RequiresPermissions("document:read")
-    fun listBomsByOrderStatus(@RequestParam (value = "status") status: Collection<Int>): List<Bom> {
+    fun listBomsByOrderStatus(@RequestParam(value = "status") status: Collection<Int>): List<Bom> {
         val boms = bomRepository.findByOrderStatus(status)
 
 //        boms.forEach { it.orderItem?.bom = null }
@@ -321,7 +321,7 @@ class RepoChangingController {
 //        val sheet = deliverySheetRepository.findById(id) ?: return Optional.empty()
 
         val changing = RepoChanging(0, repo = data.repo)
-         entityManager.persist(data)
+        entityManager.persist(data)
 
         return Optional.of(changing)
     }
@@ -364,7 +364,7 @@ class RepoChangingController {
         deliverySheet.status = 2
 
         val repoSheet = request.copy(status = 1, type = -1, applicant = user,
-                order = deliverySheet.order, 
+                order = deliverySheet.order,
                 deliverySheet = deliverySheet,
                 createDate = Date(), items = mutableListOf())
 
@@ -376,8 +376,8 @@ class RepoChangingController {
 //            entityManager.persist(repoChangingItem)
         }
 
-        with (entityManager) {
-//        entityManager.transaction.begin()
+        with(entityManager) {
+            //        entityManager.transaction.begin()
             persist(repoSheet)
 
             persist(deliverySheet)
@@ -478,7 +478,7 @@ class RepoChangingController {
 
             it.items.size
             it.items.forEach { oi ->
-//                oi.producingSchedule?.orderItem = null
+                //                oi.producingSchedule?.orderItem = null
 //                oi.producingSchedule?.bom?.orderItem = null
 //                oi.producingSchedule?.bom?.producingSchedule = null
                 oi.producingSchedule = null
@@ -638,8 +638,7 @@ class RepoChangingController {
             cleanStockChanging(changing)
 
             ResponseEntity.ok(changing)
-        }
-        else
+        } else
             ResponseEntity.notFound().build()
     }
 
@@ -664,37 +663,86 @@ class RepoChangingController {
     }
 
 
-    @PostMapping("/inventory")
-    @Transactional
-    fun saveInventory(@RequestBody inventory: Inventory): Boolean {
-        inventoryRepository.save(inventory)
+    @GetMapping("/inventories/{id}")
+    fun getInventoryById(@PathVariable(value = "id") id: Int): ResponseEntity<Inventory> {
+        val oi = inventoryRepository.findById(id)
 
-        inventory.items.forEach {
-            it.id.inventory = inventory.id
-            it.inventory = inventory
-        }
+        return if (oi.isPresent) {
+            val inventory = oi.get()
 
-        repoHistoryRepository.saveAll(inventory.items)
+            inventory.items.size
+            inventory.items.forEach {
+                it.material?.product = null
+            }
 
-        return true
+            ResponseEntity.ok(inventory)
+        } else
+            ResponseEntity(null, HttpStatus.NOT_FOUND)
     }
 
 
-    @PutMapping("/inventory/{id}")
+    @PostMapping("/inventories")
     @Transactional
-    fun updateInventory(@PathVariable(value = "id") id: Int, @RequestBody inventory: Inventory): Boolean {
-        inventory.id = id
-        inventory.items.forEach {
-            it.id.inventory = id
-            it.inventory = Inventory(id)
+    fun saveInventory(@RequestBody inventory: Inventory,
+                      @RequestParam(name = "action", required = false) action: Int = 0): ResponseEntity<Boolean> {
+//        inventory.items.forEach {
+//            it.id.inventory = inventory.id
+//            it.inventory = inventory
+//        }
+        //
+        if (action == 2) {
+
+            inventory.status = 2
+            inventoryRepository.save(inventory)
+
+        } else {
+            if (action == 1) {
+                inventory.reportBy ?: return ResponseEntity(false, HttpStatus.BAD_REQUEST)
+
+                inventory.status = 1
+                inventory.reportDate = Date()
+            }
+
+            if (inventory.items == null)
+                inventory.items = mutableListOf()
+
+            val items = ArrayList(inventory.items)
+            inventory.items.clear()
+
+            //
+            inventoryRepository.save(inventory)
+
+            //
+            inventory.addItems(items)
+
+            //
+            items.forEach {
+                if (entityManager.contains(it))
+                    entityManager.merge(it)
+            }
+
+            inventoryRepository.saveAndFlush(inventory)
         }
 
-        inventoryRepository.save(inventory)
-
-        repoHistoryRepository.saveAll(inventory.items)
-
-        return true
+        return ResponseEntity.ok(true)
     }
+
+
+//    @PutMapping("/inventory/{id}")
+//    @Transactional
+//    fun updateInventory(@PathVariable(value = "id") id: Int, @RequestBody inventory: Inventory): Boolean {
+//        inventory.id = id
+//        inventory.items.forEach {
+//            it.id.inventory = id
+//            it.inventory = Inventory(id)
+//        }
+//
+//        inventoryRepository.save(inventory)
+//
+//        repoHistoryRepository.saveAll(inventory.items)
+//
+//        return true
+//    }
 }
 
 data class ApplyStockChanging(

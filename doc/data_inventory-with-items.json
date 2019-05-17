@@ -1,0 +1,39 @@
+{
+    "id": 0,
+    "repo": {"id": 1},
+    "comment": "test-1",
+    "reportBy": {"id": 10},
+
+    "items": [
+        {
+        	"id": {},
+            "repo": {"id": 1},
+            "material": {"id": 2},
+            "quantity": 1.23,
+            "price": 4.56
+        }
+    ]
+}
+
+
+{
+    "id": 64,
+    "repo": {"id": 1},
+    "comment": "test-7",
+    "reportBy": {"id": 10},
+
+    "items": [
+        {
+            "repo": {"id": 1},
+            "material": {"id": 4},
+            "quantity": 71,
+            "price": 74
+        },
+        {
+            "repo": {"id": 1},
+            "material": {"id": 2},
+            "quantity": 71,
+            "price": 72
+        }
+    ]
+}
