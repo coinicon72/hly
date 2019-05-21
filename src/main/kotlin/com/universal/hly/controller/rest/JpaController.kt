@@ -681,6 +681,14 @@ class RepoChangingController {
     }
 
 
+    @GetMapping("/inventories")
+    fun listInventories(@RequestParam(name = "status", required = false) status: Collection<Int>?): MutableList<Inventory> {
+        return if (status == null)
+            inventoryRepository.findAll()
+        else
+            inventoryRepository.findByStatusIn(status)
+    }
+
     @PostMapping("/inventories")
     @Transactional
     fun saveInventory(@RequestBody inventory: Inventory,

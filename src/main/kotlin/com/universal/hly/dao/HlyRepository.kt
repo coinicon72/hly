@@ -285,7 +285,9 @@ interface PurchasingOrderItemRepository : MyBaseRepository<PurchasingOrderItem, 
 
 @RequiresPermissions(value = ["repo:inventory:read"])
 // POST: {"comment": "test again"}
-interface InventoryRepository : MyBaseRepository<Inventory, Int>
+interface InventoryRepository : MyBaseRepository<Inventory, Int> {
+    fun findByStatusIn(status: Collection<Int>): MutableList<Inventory>
+}
 
 @RequiresPermissions(value = ["repo:inventory:read"])
 // POST {"id": {"inventory": 0, "material": 0}, "inventory": {"id":2}, "material": {"id":5}, "quantity": 1.3, "price": 4.4}
