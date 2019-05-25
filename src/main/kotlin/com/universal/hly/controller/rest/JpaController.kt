@@ -80,10 +80,31 @@ class RepoChangingController {
 
     @GetMapping("/boms")
 //    @RequiresPermissions("document:read")
-    fun listBomsByOrderStatus(@RequestParam(value = "status") status: Collection<Int>): List<Bom> {
-        val boms = bomRepository.findByOrderStatus(status)
+    fun listBomsByOrderStatus(@RequestParam(value = "status") status: Collection<Int>?): List<Bom> {
 
-//        boms.forEach { it.orderItem?.bom = null }
+        val boms = if (status == null)
+            bomRepository.findAll()
+        else
+            bomRepository.findByOrderStatus(status)
+
+        boms.forEach {
+            it.orderItem?.bom = null
+            it.orderItem?.product?.material?.product = null
+            it.orderItem?.product?.material = null
+            it.orderItem?.producingSchedule = null
+
+            it.producingSchedule = null
+            it.formula = null
+
+            //
+            it.items.size
+            it.items.forEach {bi ->
+                bi.bom = null
+//                bi.order = null
+                bi.material.product = null
+                bi.product.material = null
+            }
+        }
 
         return boms
     }

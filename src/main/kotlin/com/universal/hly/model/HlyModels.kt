@@ -774,7 +774,7 @@ data class BomItem(
         @MapsId("order")
         @ManyToOne
         @JoinColumn(name = "order_id", referencedColumnName = "id")
-        val order: Order,
+        var order: Order,
 
         @MapsId("product")
         @ManyToOne
@@ -791,7 +791,7 @@ data class BomItem(
         @ManyToOne
         @JoinColumns(JoinColumn(name = "order_id", referencedColumnName = "order_id", insertable = false, updatable = false),
                 JoinColumn(name = "product_id", referencedColumnName = "product_id", insertable = false, updatable = false))
-        val bom: Bom? = null,
+        var bom: Bom? = null,
 
         val calcQuantity: Float = 0f,
         val quantity: Float = 0f
